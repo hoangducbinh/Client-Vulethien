@@ -1,0 +1,198 @@
+{
+    "suppliers": [
+      {
+        "supplier_id": 1,
+        "name": "Công ty TNHH ABC",
+        "contact_info": "0123456789",
+        "address": "123 Đường ABC, TP. Hồ Chí Minh"
+      },
+      {
+        "supplier_id": 2,
+        "name": "Công ty CP XYZ",
+        "contact_info": "0987654321",
+        "address": "456 Đường XYZ, Hà Nội"
+      }
+    ],
+    "products": [
+      {
+        "product_id": 1,
+        "name": "Sản phẩm A",
+        "description": "Mô tả sản phẩm A",
+        "category": "Danh mục 1",
+        "unit_price": 100000,
+        "quantity_in_stock": 500,
+        "reorder_level": 50,
+        "supplier_id": 1
+      },
+      {
+        "product_id": 2,
+        "name": "Sản phẩm B",
+        "description": "Mô tả sản phẩm B",
+        "category": "Danh mục 2",
+        "unit_price": 150000,
+        "quantity_in_stock": 300,
+        "reorder_level": 30,
+        "supplier_id": 2
+      }
+    ],
+    "warehouses": [
+      {
+        "warehouse_id": 1,
+        "name": "Kho TP. Hồ Chí Minh",
+        "location": "123 Đường ABC, TP. Hồ Chí Minh"
+      },
+      {
+        "warehouse_id": 2,
+        "name": "Kho Hà Nội",
+        "location": "456 Đường XYZ, Hà Nội"
+      }
+    ],
+    "stock_entries": [
+      {
+        "stock_entry_id": 1,
+        "supplier_id": 1,
+        "warehouse_id": 1,
+        "date_received": "2024-08-01",
+        "total_value": 50000000
+      }
+    ],
+    "stock_entry_details": [
+      {
+        "entry_detail_id": 1,
+        "stock_entry_id": 1,
+        "product_id": 1,
+        "quantity_received": 100,
+        "quality_status": "Tốt"
+      },
+      {
+        "entry_detail_id": 2,
+        "stock_entry_id": 1,
+        "product_id": 2,
+        "quantity_received": 50,
+        "quality_status": "Tốt"
+      }
+    ],
+    "stock_exits": [
+      {
+        "stock_exit_id": 1,
+        "customer_id": 1,
+        "warehouse_id": 2,
+        "date_dispatched": "2024-08-05",
+        "total_value": 20000000
+      }
+    ],
+    "stock_exit_details": [
+      {
+        "exit_detail_id": 1,
+        "stock_exit_id": 1,
+        "product_id": 1,
+        "quantity_dispatched": 20
+      },
+      {
+        "exit_detail_id": 2,
+        "stock_exit_id": 1,
+        "product_id": 2,
+        "quantity_dispatched": 10
+      }
+    ],
+    "delivery_staff": [
+      {
+        "staff_id": 1,
+        "name": "Nguyễn Văn A",
+        "contact_info": "0901123456",
+        "employment_date": "2023-06-01"
+      },
+      {
+        "staff_id": 2,
+        "name": "Trần Thị B",
+        "contact_info": "0909876543",
+        "employment_date": "2023-07-15"
+      }
+    ],
+    "work_schedules": [
+      {
+        "schedule_id": 1,
+        "staff_id": 1,
+        "date": "2024-08-01",
+        "shift_start": "08:00",
+        "shift_end": "17:00"
+      }
+    ],
+    "delivery_routes": [
+      {
+        "route_id": 1,
+        "staff_id": 1,
+        "date": "2024-08-01",
+        "optimized_path": "Tuyến đường A"
+      }
+    ],
+    "delivery_progress": [
+      {
+        "progress_id": 1,
+        "route_id": 1,
+        "order_id": 1,
+        "status": "Đang giao",
+        "timestamp": "2024-08-01T09:00:00Z",
+        "customer_feedback": "Hàng đúng hẹn, dịch vụ tốt"
+      }
+    ],
+    "invoices": [
+      {
+        "invoice_id": 1,
+        "customer_id": 1,
+        "date_issued": "2024-08-01",
+        "total_amount": 20000000,
+        "status": "Chưa thanh toán"
+      }
+    ],
+    "invoice_details": [
+      {
+        "invoice_detail_id": 1,
+        "invoice_id": 1,
+        "product_id": 1,
+        "quantity": 20,
+        "price_per_unit": 100000,
+        "total_price": 2000000
+      },
+      {
+        "invoice_detail_id": 2,
+        "invoice_id": 1,
+        "product_id": 2,
+        "quantity": 10,
+        "price_per_unit": 150000,
+        "total_price": 1500000
+      }
+    ],
+    "assigned_orders": [
+      {
+        "assigned_order_id": 1,
+        "order_id": 1,
+        "staff_id": 1,
+        "assignment_date": "2024-08-01",
+        "status": "Đang giao"
+      }
+    ],
+    "users": [
+      {
+        "user_id": 1,
+        "username": "admin",
+        "password": "admin123",
+        "role": "admin",
+        "email": "admin@example.com",
+        "full_name": "Nguyễn Văn Admin",
+        "contact_info": "0901234567",
+        "address": "789 Đường Admin, TP. Hồ Chí Minh"
+      },
+      {
+        "user_id": 2,
+        "username": "staff1",
+        "password": "staff123",
+        "role": "delivery_staff",
+        "email": "staff1@example.com",
+        "full_name": "Trần Thị Nhân Viên",
+        "contact_info": "0902345678",
+        "address": "321 Đường Nhân Viên, Hà Nội"
+      }
+    ]
+  }
+  
