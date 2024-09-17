@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Vũ Lệ Thiên - Bán bằng cả tâm tình",
-  description: "NPP Vũ Lệ Thiên",
+  title: "Vũ Lệ Thiên",
+  description: "Vũ Lệ Thiên",
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <link rel="icon" href="/vscode.png" sizes="any" />
+      <link rel="icon" href="/truck.svg" sizes="any" />
       <body className={inter.className}>
         {children}</body>
     </html>

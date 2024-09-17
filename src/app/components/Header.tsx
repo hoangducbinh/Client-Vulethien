@@ -4,18 +4,28 @@ import Link from 'next/link';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import useAuthStore from '@/zustand/store';
 import React from 'react';
-import { FaTachometerAlt, FaBox, FaShoppingCart, FaUser, FaChartBar, FaBell } from 'react-icons/fa';
+import { FaTachometerAlt, FaBox, FaShoppingCart, FaUser, FaChartBar, FaBell, FaExpand } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 const Header = () => {
     const { logout } = useAuthStore();
+    const router = useRouter();
 
     const handleLogout = () => {
         logout();
-        console.log("Đăng xuất");
+        router.push('/login');
+    };
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 flex justify-between items-center p-3 bg-white border-b border-gray-200 shadow-md z-50">
+        <header className="flex justify-between items-center p-3 bg-white border-b border-gray-200 shadow-md z-50">
             {/* Logo */}
             <div className="flex items-center space-x-3">
                 <Image
@@ -25,7 +35,7 @@ const Header = () => {
                     alt="Logo"
                     className="ml-2"
                 />
-                <Link href="/home" className="text-lg font-semibold text-gray-800">
+                <Link href="/home" scroll={false} className="text-lg font-semibold text-gray-800">
                     Code ở tấm lòng
                 </Link>
             </div>
@@ -36,7 +46,7 @@ const Header = () => {
                     <FaTachometerAlt className="mr-2" />
                     <span>Dashboard</span>
                 </Link>
-                <Link href="/products" className="flex items-center p-2 hover:text-blue-600 transition-colors duration-200">
+                <Link href="/product" className="flex items-center p-2 hover:text-blue-600 transition-colors duration-200">
                     <FaBox className="mr-2" />
                     <span>Sản phẩm</span>
                 </Link>
@@ -53,6 +63,13 @@ const Header = () => {
                     <span>Báo cáo</span>
                 </Link>
             </div>
+
+            {/* Fullscreen Icon */}
+            <button onClick={toggleFullscreen} className="p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
+                <FaExpand className="text-xl" />
+            </button>
+
+            
 
             {/* Notification Icon */}
             <div className="flex items-center space-x-6">

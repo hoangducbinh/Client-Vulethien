@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/zustand/store';
-import LoginPage from '@/app/(screens)/(auth)/login/page';
+import LoginPage from '@/app/(auth)/login/page';
 
 
 const AuthRouter = () => {
