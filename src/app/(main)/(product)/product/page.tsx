@@ -9,6 +9,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 import Modal from '@/app/components/Modal';
 import React, { useEffect, useState } from 'react';
@@ -16,6 +24,8 @@ import { FaSearch, FaPlus } from 'react-icons/fa';
 import CreateCategory from '../category/create';
 import handleAPI from '@/services/handleAPI';
 import CreateProduct from './create';
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 const ProductPage = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -24,6 +34,11 @@ const ProductPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isOpenModalCategory, setIsOpenModalCategory] = useState<boolean>(false);
   const [isOpenModalProduct, setIsOpenModalProduct] = useState<boolean>(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null); // Quản lý sản phẩm được chọn
+  const [isUpdating, setIsUpdating] = useState<boolean>(false); // Trạng thái đang cập nhật
+
+
+ 
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -81,6 +96,13 @@ const ProductPage = () => {
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(value);
+  }
 
   return (
     <>
@@ -158,22 +180,37 @@ const ProductPage = () => {
                 <table className="w-full table-auto border-collapse ">
                   <thead>
                     <tr className="bg-gray-200 text-left">
-                      <th className="p-2 border-b rounded-tl-lg ">ID</th>
-                      <th className="p-2 border-b">Tên sản phẩm</th>
-                      <th className="p-2 border-b">Giá bán</th>
+                      <th className="p-2 border-b rounded-tl-lg">Tên sản phẩm</th>
                       <th className="p-2 border-b">Giá nhập</th>
-                      <th className="p-2 border-b rounded-tr-lg">Số lượng</th>
+                      <th className="p-2 border-b">Giá bán</th>
+                      <th className="p-2 border-b">Số lượng</th>
+                      <th className="p-2 border-b">Đơn vị tính</th>
+                      <th className="p-2 border-b rounded-tr-lg">Chi tiết</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedProducts.length > 0 ? (
                       paginatedProducts.map(product => (
                         <tr key={product._id} className="justify-center">
-                          <td className="p-2 border-b">{product._id}</td>
                           <td className="p-2 border-b">{product.name}</td>
-                          <td className="p-2 border-b">{product.unit_price}</td>
-                          <td className="p-2 border-b">{product.import_price}</td>
+                          <td className="p-2 border-b">{formatCurrency(product.import_price) }</td>
+                          <td className="p-2 border-b">{formatCurrency(product.unit_price) }</td>
                           <td className="p-2 border-b">{product.quantity_in_stock}</td>
+                          <td className="p-2 border-b">{product.unit}</td>
+                          <td className="p-2 border-b">
+                            <Sheet>
+                              <SheetTrigger onClick={() => setSelectedProduct(product)}>
+                                <Label htmlFor="description" className="block text-sm font-medium text-blue-800 mb-1">Chi tiết</Label>
+                              </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Thông tin chi tiết sản phẩm</SheetTitle>
+                      <SheetDescription></SheetDescription>
+                    </SheetHeader>
+                  
+                  </SheetContent>
+                </Sheet>
+                          </td>
                         </tr>
                       ))
                     ) : (
