@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AuthRouter from './AuthRouter';
 import MainRouter from './MainRouter';
-import useAuthStore from '@/zustand/store';
+import useAuthStore from '@/store/store';
 
 const Routers = () => {
   const [loading, setLoading] = useState(true);

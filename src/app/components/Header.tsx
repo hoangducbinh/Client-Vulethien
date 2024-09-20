@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import useAuthStore from '@/zustand/store';
+import useAuthStore from '@/store/store';
 import React from 'react';
 import { FaTachometerAlt, FaBox, FaShoppingCart, FaUser, FaChartBar, FaBell, FaExpand } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';

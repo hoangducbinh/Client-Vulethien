@@ -2,7 +2,7 @@
 
 import HomePage from '@/app/(main)/home/page';
 import Home from '@/app/page';
-import useAuthStore from '@/zustand/store';
+import useAuthStore from '@/store/store';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react'
 

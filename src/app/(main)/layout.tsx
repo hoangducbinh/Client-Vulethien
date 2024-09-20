@@ -59,13 +59,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ShoppingCart className="mr-2 h-4 w-4" />
             Đơn hàng
           </Link>
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/inventory" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <ArrowDown className="mr-2 h-4 w-4" />
             Nhập hàng
           </Link>
           <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <Truck className="mr-2 h-4 w-4" />
             Xuất hàng
+          </Link>
+
+          <Link href="/warehouse" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+            <Building className="mr-2 h-4 w-4" />
+            Kho hàng
           </Link>
           <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <FileText className="mr-2 h-4 w-4" />

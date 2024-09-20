@@ -1,5 +1,7 @@
 'use client'
 
+import React, { useEffect, useState } from 'react';
+import { Search, Plus, ChevronDown } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
@@ -9,23 +11,28 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-
-import Modal from '@/app/components/Modal';
-import React, { useEffect, useState } from 'react';
-import { FaSearch, FaPlus } from 'react-icons/fa';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CreateCategory from '../category/create';
 import handleAPI from '@/services/handleAPI';
 import CreateProduct from './create';
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import UpdateProduct from "./update";
 
 const ProductPage = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -34,15 +41,9 @@ const ProductPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isOpenModalCategory, setIsOpenModalCategory] = useState<boolean>(false);
   const [isOpenModalProduct, setIsOpenModalProduct] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null); // Quản lý sản phẩm được chọn
-  const [isUpdating, setIsUpdating] = useState<boolean>(false); // Trạng thái đang cập nhật
-
-
- 
-
-  // Pagination state
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     handleGetCategory();
@@ -64,7 +65,6 @@ const ProductPage = () => {
     try {
       const response = await handleAPI('/category/getAll', 'get');
       setCategories(response.data.data || []);
-      console.log('Response', response.data);
     } catch (error) {
       console.log('Error', error);
     }
@@ -74,7 +74,6 @@ const ProductPage = () => {
     try {
       const response = await handleAPI(`/product/getbyCategory/${selectedCategory}`, 'get');
       setProducts(response.data.data);
-      console.log('Response', response.data);
     } catch (error) {
       console.log('Error', error);
     }
@@ -89,7 +88,6 @@ const ProductPage = () => {
   const filteredProducts = (products || [])
     .filter(product => normalizeString(product.name).includes(normalizeString(searchTerm)));
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -104,181 +102,185 @@ const ProductPage = () => {
     }).format(value);
   }
 
-  return (
-    <>
-      <Modal
-        isOpen={isOpenModalCategory}
-        onClose={() => setIsOpenModalCategory(false)}
-        style={{ width: '30%' }}
-      >
-        <CreateCategory />
-      </Modal>
-      <Modal
-        style={{ width: '40%' }}
-        isOpen={isOpenModalProduct}
-        onClose={() => setIsOpenModalProduct(false)}
-      >
-        <CreateProduct />
-      </Modal>
+  const handleProductUpdate = () => {
+    handleGetProductbyCategory();
+  };
 
-      <div className="flex flex-col h-auto">
-        <div className="flex flex-1">
-          {/* Danh sách danh mục */}
-          <div className="w-1/4 bg-gray-100 p-4 overflow-y-auto border-r rounded-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Danh mục</h2>
-              <button
-                onClick={() => setIsOpenModalCategory(true)}
-                className="bg-blue-500 text-white px-3 py-1 rounded-lg flex items-center"
-              >
-                <FaPlus className="mr-2" /> Tạo danh mục
-              </button>
-            </div>
-            <ul>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Quản lý sản phẩm</h1>
+        <div className="flex space-x-4">
+          <Dialog open={isOpenModalCategory} onOpenChange={setIsOpenModalCategory}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" /> Thêm danh mục
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Thêm danh mục mới</DialogTitle>
+              </DialogHeader>
+              <CreateCategory />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isOpenModalProduct} onOpenChange={setIsOpenModalProduct}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Thêm sản phẩm
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+              </DialogHeader>
+              <CreateProduct />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Danh mục</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
               {categories.map(category => (
-                <li
-                  key={category._id}
-                  className={`cursor-pointer p-2 rounded-lg mb-2 hover:bg-gray-200 ${category._id === selectedCategory ? 'bg-gray-300' : ''
-                    }`}
-                  onClick={() => handleCategoryClick(category._id)}
-                >
-                  {category.name}
+                <li key={category._id}>
+                  <Button
+                    variant={category._id === selectedCategory ? "secondary" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => handleCategoryClick(category._id)}
+                  >
+                    {category.name}
+                  </Button>
                 </li>
               ))}
             </ul>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Danh sách sản phẩm */}
-          <div className="ml-1 w-3/4 p-4 overflow-y-auto bg-gray-100 rounded-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Sản phẩm</h2>
-              {/* Thanh tìm kiếm */}
-              
-              <div className="relative">
-              <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-1 pl-10 pr-4 outline-none rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-         
-
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle>Sản phẩm</CardTitle>
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                <Input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
               </div>
-       
-              <button
-                onClick={() => setIsOpenModalProduct(true)}
-                className="bg-green-500 text-white px-3 py-1 rounded-lg flex items-center">
-                <FaPlus className="mr-2" /> Tạo sản phẩm
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Sắp xếp <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Tên A-Z</DropdownMenuItem>
+                  <DropdownMenuItem>Tên Z-A</DropdownMenuItem>
+                  <DropdownMenuItem>Giá tăng dần</DropdownMenuItem>
+                  <DropdownMenuItem>Giá giảm dần</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            {selectedCategory === null ? (
-              <p className="text-gray-600">Vui lòng chọn danh mục để xem sản phẩm.</p>
-            ) : (
-              <div className="bg-white shadow-md rounded-lg p-4">
-                <table className="w-full table-auto border-collapse ">
-                  <thead>
-                    <tr className="bg-gray-200 text-left">
-                      <th className="p-2 border-b rounded-tl-lg">Tên sản phẩm</th>
-                      <th className="p-2 border-b">Giá nhập</th>
-                      <th className="p-2 border-b">Giá bán</th>
-                      <th className="p-2 border-b">Số lượng</th>
-                      <th className="p-2 border-b">Đơn vị tính</th>
-                      <th className="p-2 border-b rounded-tr-lg">Chi tiết</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedProducts.length > 0 ? (
-                      paginatedProducts.map(product => (
-                        <tr key={product._id} className="justify-center">
-                          <td className="p-2 border-b">{product.name}</td>
-                          <td className="p-2 border-b">{formatCurrency(product.import_price) }</td>
-                          <td className="p-2 border-b">{formatCurrency(product.unit_price) }</td>
-                          <td className="p-2 border-b">{product.quantity_in_stock}</td>
-                          <td className="p-2 border-b">{product.unit}</td>
-                          <td className="p-2 border-b">
-                            <Sheet>
-                              <SheetTrigger onClick={() => setSelectedProduct(product)}>
-                                <Label htmlFor="description" className="block text-sm font-medium text-blue-800 mb-1">Chi tiết</Label>
-                              </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Thông tin chi tiết sản phẩm</SheetTitle>
-                      <SheetDescription></SheetDescription>
-                    </SheetHeader>
-                  
-                  </SheetContent>
-                </Sheet>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="p-2 text-center text-gray-600">Không có sản phẩm nào.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Pagination Controls */}
-                <div className="mt-4 flex justify-center">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage > 1) {
-                              handlePageChange(currentPage - 1);
-                            }
-                          }}
-                          aria-disabled={currentPage === 1}
-                        />
-                      </PaginationItem>
-                      {[...Array(totalPages)].map((_, index) => (
-                        <PaginationItem key={index + 1}>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(index + 1);
-                            }}
-                            isActive={index + 1 === currentPage}
-                          >
-                            {index + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ))}
-                      {totalPages > 1 && (
-                        <PaginationItem>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      )}
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage < totalPages) {
-                              handlePageChange(currentPage + 1);
-                            }
-                          }}
-                          aria-disabled={currentPage === totalPages}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tên sản phẩm</TableHead>
+                  <TableHead>Giá nhập</TableHead>
+                  <TableHead>Giá bán</TableHead>
+                  <TableHead>Số lượng</TableHead>
+                  <TableHead>Đơn vị tính</TableHead>
+                  <TableHead>Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedProducts.map(product => (
+                  <TableRow key={product._id}>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{formatCurrency(product.import_price)}</TableCell>
+                    <TableCell>{formatCurrency(product.unit_price)}</TableCell>
+                    <TableCell>{product.quantity_in_stock}</TableCell>
+                    <TableCell>{product.unit}</TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedProduct(product)}>
+                            Chi tiết
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Thông tin chi tiết sản phẩm</DialogTitle>
+                          </DialogHeader>
+                          {selectedProduct && (
+                            <UpdateProduct 
+                              product={selectedProduct} 
+                              onUpdate={handleProductUpdate} 
+                            />
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {paginatedProducts.length === 0 && (
+              <p className="text-center text-gray-500 my-4">Không có sản phẩm nào.</p>
             )}
-          </div>
-        </div>
+            <div className="mt-4 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) handlePageChange(currentPage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={currentPage === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(page);
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </>
+    </div>
   );
-
 };
 
 export default ProductPage;

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import handleAPI from '@/services/handleAPI';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import useAuthStore from '@/zustand/store';
+import useAuthStore from '@/store/store';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

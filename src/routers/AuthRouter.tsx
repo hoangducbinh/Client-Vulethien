@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import useAuthStore from '@/zustand/store';
+import useAuthStore from '@/store/store';
 import LoginPage from '@/app/(auth)/login/page';
 
 
