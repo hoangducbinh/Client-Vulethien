@@ -72,8 +72,6 @@ interface StockEntry {
   warehouse_id: Warehouse;
   date_received: string;
   total_value: number;
-  payment: number;
-  payment_status: 'Đã thanh toán đủ' | 'Còn nợ' | 'Đã hoàn tiền';
   stockEntryDetails: StockEntryDetail[];
 }
 
@@ -83,12 +81,23 @@ interface StockEntryDetail {
   product_id: string;
   quantity_received: number;
   quantity_ordered: number;
+  import_price: number;
 }
 
 interface Warehouse {
   _id: string;
   name: string;
 }
+
+interface IProduct {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string;
+}
+
 
 export default function InventoryPage() {
   
@@ -97,8 +106,7 @@ export default function InventoryPage() {
   const [newSupplier, setNewSupplier] = useState<NewSupplier>({ name: '', contact_info: '', address: '' })
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
-  const [stockEntries, setStockEntries] = useState([])
-  const [selectedStockEntry, setSelectedStockEntry] = useState(null)
+  const [stockEntries, setStockEntries] = useState<StockEntry[]>([])
   const [isAddingStockEntry, setIsAddingStockEntry] = useState(false)
   const [newStockEntry, setNewStockEntry] = useState<StockEntry>({
     _id: '',
@@ -106,8 +114,6 @@ export default function InventoryPage() {
     warehouse_id: { _id: '', name: '' },
     date_received: '',
     total_value: 0,
-    payment: 0,
-    payment_status: 'Còn nợ',
     stockEntryDetails: []
   })
 
@@ -128,10 +134,18 @@ export default function InventoryPage() {
     fetchProducts()
   }, [])
 
+
+  const getPaymentStatus = (totalValue: number, payment: number) => {
+    if (payment >= totalValue) return 'Đã thanh toán đủ';
+    if (payment > 0) return 'Còn nợ';
+    return 'Chưa thanh toán';
+  }
+
+
   const fetchWarehouses = async () => {
     try {
       const response = await handleAPI('/warehouse/getAll', 'get')
-      setWarehouses(response.data.warehouses)
+      setWarehouses(response.data.data)
     } catch (error) {
       console.error('Error fetching warehouses:', error)
     }
@@ -150,7 +164,10 @@ export default function InventoryPage() {
   const fetchStockEntries = async () => {
     try {
       const response = await handleAPI('/stockEntry/getAll', 'get')
-      setStockEntries(response.data.stockEntries)
+      console.log(response.data.stockEntries)
+      setStockEntries(
+        response.data.stockEntries  
+      )
     } catch (error) {
       console.error('Error fetching stock entries:', error)
     }
@@ -204,34 +221,35 @@ export default function InventoryPage() {
 
   const handleAddStockEntry = async () => {
     try {
-      await handleAPI('/stockEntry/create', newStockEntry, 'post')
-      setIsAddingStockEntry(false)
-      setNewStockEntry({
-        _id: '',
-        supplier_id: { _id: '', name: '', contact_info: '', address: '' },
-        warehouse_id: { _id: '', name: '' },
-        date_received: '',
-        total_value: 0,
-        payment: 0,
-        payment_status: 'Còn nợ',
-        stockEntryDetails: []
-      })
-      fetchStockEntries()
-    } catch (error) {
-      console.error('Error adding stock entry:', error)
-    }
-  }
+      const response = await handleAPI('/stockEntry/create', {
+        supplier_id: newStockEntry.supplier_id._id,
+        warehouse_id: newStockEntry.warehouse_id._id,
+        date_received: newStockEntry.date_received,
+        total_value: newStockEntry.total_value,
+        stockEntryDetails: newStockEntry.stockEntryDetails.map(detail => ({
+          product_id: detail.product_id,
+          quantity_received: detail.quantity_received,
+          import_price: detail.import_price
+        }))
+      }, 'post');
 
-  const handleUpdateStockEntry = async () => {
-    if (!selectedStockEntry) return
-    try {
-      await handleAPI(`/stockEntry/update/${selectedStockEntry._id}`, selectedStockEntry, 'put')
-      setSelectedStockEntry(null)
-      fetchStockEntries()
+      if (response.status === 201) {
+        setIsAddingStockEntry(false);
+        setNewStockEntry({
+          _id: '',
+          supplier_id: { _id: '', name: '', contact_info: '', address: '' },
+          warehouse_id: { _id: '', name: '' },
+          date_received: '',
+          total_value: 0,
+          stockEntryDetails: []
+        });
+        fetchStockEntries();
+      }
     } catch (error) {
-      console.error('Error updating stock entry:', error)
+      console.error('Error adding stock entry:', error);
     }
-  }
+  };
+
 
   const handleDeleteStockEntry = async (stockEntryId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phiếu nhập này?')) {
@@ -244,17 +262,17 @@ export default function InventoryPage() {
     }
   }
 
-  const filteredStockEntries = stockEntries.filter(entry => 
+  const filteredStockEntries = stockEntries?.filter(entry => 
     (filterSupplier === 'all' || entry.supplier_id._id === filterSupplier) &&
     (filterWarehouse === 'all' || entry.warehouse_id._id === filterWarehouse) &&
-    (filterPaymentStatus === 'all' || entry.payment_status === filterPaymentStatus) &&
+    (filterPaymentStatus === 'all' || getPaymentStatus(entry.total_value, entry.payment) === filterPaymentStatus) &&
     (entry.supplier_id.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
      entry.warehouse_id.name.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredStockEntries.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems = filteredStockEntries?.slice(indexOfFirstItem, indexOfLastItem)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
@@ -328,7 +346,7 @@ export default function InventoryPage() {
                   <SelectItem value="all">Tất cả</SelectItem>
                   <SelectItem value="Đã thanh toán đủ">Đã thanh toán đủ</SelectItem>
                   <SelectItem value="Còn nợ">Còn nợ</SelectItem>
-                  <SelectItem value="Đã hoàn tiền">Đã hoàn tiền</SelectItem>
+                  <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -356,14 +374,14 @@ export default function InventoryPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {currentItems.map((entry) => (
-            <TableRow key={entry._id}>
-              <TableCell>{new Date(entry.date_received).toLocaleDateString()}</TableCell>
-              <TableCell>{entry.supplier_id.name}</TableCell>
-              <TableCell>{entry.warehouse_id.name}</TableCell>
-              <TableCell>{entry.total_value.toLocaleString()} VND</TableCell>
-              <TableCell>{entry.payment.toLocaleString()} VND</TableCell>
-              <TableCell>{entry.payment_status}</TableCell>
+        {stockEntries && stockEntries.map((entry) => (
+        <TableRow key={entry._id}>
+          <TableCell>{entry.supplier_id.name}</TableCell>
+          <TableCell>{entry.warehouse_id.name}</TableCell>
+          <TableCell>{new Date(entry.date_received).toLocaleDateString()}</TableCell>
+          <TableCell>{entry.total_value.toLocaleString()} VND</TableCell>
+          
+          <TableCell>{getPaymentStatus(entry.total_value, entry.payment)}</TableCell>
               <TableCell>
                 <Button variant="outline" size="sm" className="mr-2">
                   Chi tiết
@@ -381,9 +399,9 @@ export default function InventoryPage() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
+              <PaginationPrevious onClick={() => paginate(currentPage - 1)} aria-disabled={currentPage === 1} />
             </PaginationItem>
-            {Array.from({ length: Math.ceil(filteredStockEntries.length / itemsPerPage) }).map((_, index) => (
+            {Array.from({ length: Math.ceil(filteredStockEntries?.length / itemsPerPage) }).map((_, index) => (
               <PaginationItem key={index}>
                 <PaginationLink onClick={() => paginate(index + 1)} isActive={currentPage === index + 1}>
                   {index + 1}
@@ -391,7 +409,10 @@ export default function InventoryPage() {
               </PaginationItem>
             ))}
             <PaginationItem>
-              <PaginationNext onClick={() => paginate(currentPage + 1)} disabled={currentPage === Math.ceil(filteredStockEntries.length / itemsPerPage)} />
+              <PaginationNext
+                onClick={() => paginate(currentPage + 1)}
+                aria-disabled={currentPage === Math.ceil(filteredStockEntries?.length / itemsPerPage)}
+              />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
@@ -582,7 +603,6 @@ export default function InventoryPage() {
                   <SelectValue placeholder="Chọn kho" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
                   {warehouses && warehouses.map((warehouse) => (
                     <SelectItem key={warehouse._id} value={warehouse._id}>{warehouse.name}</SelectItem>
                   ))}
@@ -599,20 +619,13 @@ export default function InventoryPage() {
               />
             </div>
             <div>
-              <Label htmlFor="payment_status">Trạng thái thanh toán</Label>
-              <Select
-                value={newStockEntry.payment_status}
-                onValueChange={(value: 'Đã thanh toán đủ' | 'Còn nợ' | 'Đã hoàn tiền') => setNewStockEntry({...newStockEntry, payment_status: value})}
-              >
-                <SelectTrigger id="payment_status">
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Đã thanh toán đủ">Đã thanh toán đủ</SelectItem>
-                  <SelectItem value="Còn nợ">Còn nợ</SelectItem>
-                  <SelectItem value="Đã hoàn tiền">Đã hoàn tiền</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="total_value">Tổng giá trị</Label>
+              <Input
+                id="total_value"
+                type="number"
+                value={newStockEntry.total_value}
+                onChange={(e) => setNewStockEntry({...newStockEntry, total_value: parseFloat(e.target.value)})}
+              />
             </div>
           </div>
           <div className="mt-4">
@@ -642,7 +655,7 @@ export default function InventoryPage() {
                           <SelectValue placeholder="Chọn sản phẩm" />
                         </SelectTrigger>
                         <SelectContent>
-                          {products && products.map((product) => (
+                          {products.map((product: IProduct) => (
                             <SelectItem key={product._id} value={product._id}>{product.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -662,16 +675,16 @@ export default function InventoryPage() {
                     <TableCell>
                       <Input
                         type="number"
-                        value={detail.price}
+                        value={detail.import_price}
                         onChange={(e) => {
                           const updatedDetails = [...newStockEntry.stockEntryDetails];
-                          updatedDetails[index].price = parseFloat(e.target.value);
+                          updatedDetails[index].import_price = parseFloat(e.target.value);
                           setNewStockEntry({...newStockEntry, stockEntryDetails: updatedDetails});
                         }}
                       />
                     </TableCell>
                     <TableCell>
-                      {(detail.quantity_received * detail.price).toLocaleString()} VND
+                      {(detail.quantity_received * detail.import_price).toLocaleString()} VND
                     </TableCell>
                   </TableRow>
                 ))}
@@ -680,32 +693,18 @@ export default function InventoryPage() {
             <Button
               onClick={() => setNewStockEntry({
                 ...newStockEntry,
-                stockEntryDetails: [...newStockEntry.stockEntryDetails, { product_id: '', quantity_received: 0, price: 0 }]
+                stockEntryDetails: [...newStockEntry.stockEntryDetails, 
+                  { product_id: '', 
+                    quantity_received: 0, 
+                    import_price: 0, 
+                    quantity_ordered: 0, 
+                    stock_entry_id: '',
+                    _id: '' }]
               })}
               className="mt-2"
             >
               Thêm sản phẩm
             </Button>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="total_value">Tổng giá trị</Label>
-              <Input
-                id="total_value"
-                type="number"
-                value={newStockEntry.total_value}
-                onChange={(e) => setNewStockEntry({...newStockEntry, total_value: parseFloat(e.target.value)})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="payment">Đã thanh toán</Label>
-              <Input
-                id="payment"
-                type="number"
-                value={newStockEntry.payment}
-                onChange={(e) => setNewStockEntry({...newStockEntry, payment: parseFloat(e.target.value)})}
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleAddStockEntry}>Thêm phiếu nhập</Button>
