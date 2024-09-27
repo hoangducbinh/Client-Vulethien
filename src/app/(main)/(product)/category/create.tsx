@@ -20,7 +20,7 @@ const CreateCategory = () => {
     const [category, setCategory] = useState('')
     const [description, setDescription] = useState('')
     const [open, setOpen] = useState(false)
-    const [alertType, setAlertType] = useState('') // 'success' or 'error'
+    const [alertType, setAlertType] = useState('')
     const [alertMessage, setAlertMessage] = useState('')
 
     const handleCreateCategory = async () => {

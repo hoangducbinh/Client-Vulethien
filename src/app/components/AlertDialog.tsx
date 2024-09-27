@@ -1,34 +1,37 @@
-import React from 'react'
+import { ReactNode } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
-const AlertDialogComponent = ({ open, onClose, title, message, button, buttonx }: any) => {
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  description: string;
+  actions: ReactNode;
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ isOpen, onClose, title, description, actions }) => {
   return (
-    <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogTrigger asChild>
-        <button style={{ display: 'none' }}>Trigger</button>
-      </AlertDialogTrigger>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{message}</AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>{buttonx}</AlertDialogCancel>
-          <AlertDialogAction onClick={onClose}>{button}</AlertDialogAction>
+          {actions}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
+  );
+};
 
-export default AlertDialogComponent
+export default ConfirmDialog;

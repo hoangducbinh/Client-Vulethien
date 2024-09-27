@@ -29,14 +29,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     router.push('/login');
   };
-
+ 
   return (
     <div className="flex h-screen bg-white">
       {/* Sidebar */}
       <aside className={`bg-white w-64 min-h-screen ${sidebarOpen ? 'block' : 'hidden'} md:block`}>
         <div className="flex items-center h-16 px-4">
           <ShoppingCart className="h-6 w-6 mr-2 text-blue-600" />
-          <span className="text-xl font-semibold">Vũ Lệ Thiên</span>
+          <span className="text-xl font-semibold">Code toàn bug</span>
         </div>
         <nav className="p-4 space-y-2">
           <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">

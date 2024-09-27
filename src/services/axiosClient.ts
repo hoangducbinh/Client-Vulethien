@@ -3,6 +3,7 @@ import queryString from "query-string";
 
 
 const baseURL = `http://localhost:8000/`
+//const baseURL = `http://192.168.1.8:8000/`
 
 const axiosClient = axios.create(
     {
