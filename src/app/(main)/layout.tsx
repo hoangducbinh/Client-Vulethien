@@ -22,18 +22,20 @@ import {
   Truck, FileText, ClipboardList, Building  } from 'lucide-react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
+import useAuthStore from '@/store/store';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const router = useRouter();
+  const { logout } = useAuthStore();
   const handleLogout = () => {
+    logout();
     router.push('/login');
   };
  
   return (
     <div className="flex h-screen bg-white">
       {/* Sidebar */}
-      <aside className={`bg-white w-64 min-h-screen ${sidebarOpen ? 'block' : 'hidden'} md:block`}>
+      <aside className={`bg-gray-100 rounded-lg w-64 min-h-screen ${sidebarOpen ? 'block' : 'hidden'} md:block`}>
         <div className="flex items-center h-16 px-4">
           <ShoppingCart className="h-6 w-6 mr-2 text-blue-600" />
           <span className="text-xl font-semibold">Code toàn bug</span>
@@ -119,7 +121,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem>Cài đặt</DropdownMenuItem>
                 <DropdownMenuItem>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Đăng xuất</span>
+                  <span onClick={handleLogout}>Đăng xuất</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

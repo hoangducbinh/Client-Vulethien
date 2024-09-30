@@ -63,6 +63,13 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import handleAPI from '@/services/handleAPI'
+import Modal from '@/app/components/Modal'
+import LottieAnimation from '@/app/components/LottieAnimation'
+import trash from '@/lottie/trash.json'
+import successAnimation from '@/lottie/success.json';
+import errorAnimation from '@/lottie/error.json';
+
+import { useForm, Controller } from 'react-hook-form';
 
 
 interface Supplier {
@@ -149,10 +156,35 @@ export default function InventoryPage() {
   const [filterSupplier, setFilterSupplier] = useState('all')
   const [filterWarehouse, setFilterWarehouse] = useState('all')
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('all')
-  const [alertType, setAlertType] = useState('')
-  const [alertMessage, setAlertMessage] = useState('')
   const [open, setOpen] = useState(false)
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [supplierIdToDelete, setSupplierIdToDelete] = useState('');
+  const [isModalOpenDeleteStockEntry, setIsModalOpenDeleteStockEntry] = useState(false);
+  const [deleteEntryId, setDeleteEntryId] = useState('');
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'success' | 'error'>('success');
+
+
+
+
+
+  const handleDeleteSupplier = (supplierId: string) => {
+    setSupplierIdToDelete(supplierId);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteStockEntry = (stockEntryId: string) => {
+    setDeleteEntryId(stockEntryId);
+    setIsModalOpenDeleteStockEntry(true);
+  };
+
+
+
+
+
 
 
 
@@ -241,15 +273,16 @@ export default function InventoryPage() {
       console.error('Error updating supplier:', error)
     }
   }
-  const handleDeleteSupplier = async (supplierId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa nhà cung cấp này?')) {
-      try {
-        await handleAPI(`/supplier/delete/${supplierId}`, {}, 'delete')
-        setSuppliers(suppliers.filter(s => s._id !== supplierId))
-      } catch (error) {
-        console.error('Error deleting supplier:', error)
-      }
+  const confirmDeleteSupplier = async () => {
+
+    try {
+      await handleAPI(`/supplier/delete/${supplierIdToDelete}`, {}, 'delete');
+      setSuppliers(suppliers.filter(s => s._id !== supplierIdToDelete));
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
     }
+
   }
 
 
@@ -339,16 +372,44 @@ export default function InventoryPage() {
     setIsViewingDetails(true);
   };
 
-  const handleDeleteStockEntry = async (stockEntryId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phiếu nhập này?')) {
-      try {
-        await handleAPI(`/stockEntry/delete/${stockEntryId}`, {}, 'delete')
-        fetchStockEntries()
-      } catch (error) {
-        console.error('Error deleting stock entry:', error)
-      }
+
+
+  const confirmDeleteStockEntry = async (stockEntryId: string) => {
+
+    try {
+      await handleAPI(`/stockEntry/delete/${stockEntryId}`, {}, 'delete')
+      fetchStockEntries()
+      setIsModalOpenDeleteStockEntry(false);
+    } catch (error) {
+      console.error('Error deleting stock entry:', error)
     }
   }
+
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      name: '',
+      contact_info: '',
+      address: '',
+    }
+  });
+
+  const onSubmitSupplier = async (data: any) => {
+    try {
+      const response = await handleAPI('/supplier/create', data, 'post');
+      setSuppliers([...suppliers, response.data.data]);
+      reset();
+      setAlertMessage('Thêm nhà cung cấp thành công!');
+      setAlertType('success');
+      setOpen(true);
+    } catch (error: any) {
+      //console.error('Error adding supplier:', error);
+      setAlertMessage('Tên nhà cung cấp đã tồn tại!');
+      setAlertType('error');
+      setOpen(true);
+    }
+  };
+
+
 
   const filteredStockEntries = stockEntries?.filter(entry =>
     (filterSupplier === 'all' || entry.supplier_id._id === filterSupplier) &&
@@ -489,7 +550,7 @@ export default function InventoryPage() {
                     <Button variant="outline" size="sm" className="mr-2" onClick={() => handleViewDetails(entry)}>
                       Chi tiết
                     </Button>
-                    <Button disabled variant="destructive" size="sm" onClick={() => handleDeleteStockEntry(entry._id)}>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteStockEntry(entry._id)}>
                       Xóa
                     </Button>
                   </TableCell>
@@ -544,44 +605,61 @@ export default function InventoryPage() {
                       <DialogTitle>Thêm nhà cung cấp mới</DialogTitle>
                       <DialogDescription></DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                          Tên nhà cung cấp
-                        </Label>
-                        <Input
-                          id="name"
-                          value={newSupplier.name}
-                          onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                          className="col-span-3"
-                        />
+                    <form onSubmit={handleSubmit(onSubmitSupplier)}>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">
+                            Tên nhà cung cấp
+                          </Label>
+                          <Controller
+                            name="name"
+                            control={control}
+                            rules={{ required: 'Tên nhà cung cấp là bắt buộc' }}
+                            render={({ field, fieldState: { error } }) => (
+                              <div className="col-span-3">
+                                <Input {...field} id="name" />
+                                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+                              </div>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="contact_info" className="text-right">
+                            Thông tin liên hệ
+                          </Label>
+                          <Controller
+                            name="contact_info"
+                            control={control}
+                            rules={{ required: 'Thông tin liên hệ là bắt buộc' }}
+                            render={({ field, fieldState: { error } }) => (
+                              <div className="col-span-3">
+                                <Input {...field} id="contact_info" />
+                                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+                              </div>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="address" className="text-right">
+                            Địa chỉ nhà cung cấp
+                          </Label>
+                          <Controller
+                            name="address"
+                            control={control}
+                            rules={{ required: 'Địa chỉ là bắt buộc' }}
+                            render={({ field, fieldState: { error } }) => (
+                              <div className="col-span-3">
+                                <Input {...field} id="address" />
+                                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+                              </div>
+                            )}
+                          />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="contact_info" className="text-right">
-                          Thông tin liên hệ
-                        </Label>
-                        <Input
-                          id="contact_info"
-                          value={newSupplier.contact_info}
-                          onChange={(e) => setNewSupplier({ ...newSupplier, contact_info: e.target.value })}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="address" className="text-right">
-                          Địa chỉ nhà cung cấp
-                        </Label>
-                        <Input
-                          id="address"
-                          value={newSupplier.address}
-                          onChange={(e) => setNewSupplier({ ...newSupplier, address: e.target.value })}
-                          className="col-span-3"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddSupplier}>Thêm</Button>
-                    </DialogFooter>
+                      <DialogFooter>
+                        <Button type="submit">Thêm</Button>
+                      </DialogFooter>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -606,7 +684,7 @@ export default function InventoryPage() {
                         <Button variant="outline" size="sm" className="mr-2" onClick={() => handleEditSupplier(supplier)}>
                           <Edit className="h-4 w-4 mr-1" /> Sửa
                         </Button>
-                        <Button disabled variant="destructive" size="sm" onClick={() => handleDeleteSupplier(supplier._id)}>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteSupplier(supplier._id)}>
                           <Trash2 className="h-4 w-4 mr-1" /> Xóa
                         </Button>
                       </TableCell>
@@ -999,7 +1077,7 @@ export default function InventoryPage() {
                           const additionalAmount = parseFloat(e.target.value) || 0;
                           const newAmount = selectedStockEntry.payment.amount + selectedStockEntry.payment.last_amount + additionalAmount;
                           const newStatus = newAmount >= selectedStockEntry.total_value ? 'Đã thanh toán đủ' : 'Còn nợ';
-                          
+
                           setSelectedStockEntry({
                             ...selectedStockEntry,
                             payment: {
@@ -1046,8 +1124,8 @@ export default function InventoryPage() {
               )}
 
               <div className="flex justify-end space-x-2">
-                <Button 
-                  onClick={() => handleUpdatePayment(selectedStockEntry.payment)} 
+                <Button
+                  onClick={() => handleUpdatePayment(selectedStockEntry.payment)}
                 >
                   Cập nhật thanh toán
                 </Button>
@@ -1065,16 +1143,24 @@ export default function InventoryPage() {
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="bg-white p-6 rounded-lg shadow-xl max-w-md mx-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle className={`text-xl font-semibold mb-2 ${alertType === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-              {alertType === 'success' ? 'Thành công' : 'Lỗi'}
+            <AlertDialogTitle className={`text-xl text-center font-semibold mb-2 ${alertType === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              {alertType === 'success' ? 'Thành công' : 'Thông báo'}
             </AlertDialogTitle>
           </AlertDialogHeader>
-          <AlertDialogDescription className="text-sm text-gray-600 mb-4">
+          <div className="flex justify-center mb-4">
+            <LottieAnimation 
+              animationData={alertType === 'success' ? successAnimation : errorAnimation} 
+              loop={false} 
+              autoplay={true} 
+              width={100} 
+              height={100} 
+            />
+          </div>
+          <AlertDialogDescription className="text-gray-800 font-medium mb-6 text-center">
             {alertMessage}
           </AlertDialogDescription>
           <AlertDialogFooter className="flex justify-end">
             <AlertDialogAction
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-150 ease-in-out"
               onClick={() => setOpen(false)}
             >
               Đóng
@@ -1084,8 +1170,90 @@ export default function InventoryPage() {
       </AlertDialog>
 
 
+      {/* Modal xác nhận xóa nhà cung cấp*/}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Xác nhận xóa"
+        className="p-8" // Thêm bóng và bo góc cho modal
+      >
+        <div className="flex justify-center mb-4">
+          <LottieAnimation animationData={trash} loop={false} autoplay={true} width={100} height={100} />
+        </div>
+        <Label className="text-gray-800 font-medium mb-6 text-center">
+          Bạn có chắc chắn muốn xóa nhà cung cấp này?
+        </Label>
+        <div className="flex justify-end mt-4">
+          <Button variant="destructive" onClick={confirmDeleteSupplier} className="mr-2">
+            Xác nhận
+          </Button>
+          <Button variant="outline" onClick={() => setIsModalOpen(false)} className="mr-2">
+            Hủy
+          </Button>
+        </div>
+      </Modal>
 
+      {/* Modal xác nhận xóa phiếu nhập*/}
+      <Modal
+        isOpen={isModalOpenDeleteStockEntry}
+        onClose={() => {
+          setIsModalOpenDeleteStockEntry(false);
+          setDeleteEntryId('');
+        }
+        }
+
+        title="Xác nhận xóa"
+        className="p-8" // Thêm bóng và bo góc cho modal
+      >
+        <div className="flex justify-center mb-4">
+          <LottieAnimation animationData={trash} loop={false} autoplay={true} width={100} height={100} />
+        </div>
+        <Label className="text-gray-800 font-medium mb-6 text-center">
+          Bạn có chắc chắn muốn xóa phiếu nhập này?
+        </Label>
+        <div className="flex justify-end mt-4">
+          <Button variant="destructive" onClick={() => confirmDeleteStockEntry(deleteEntryId)} className="mr-2">
+            Xác nhận
+          </Button>
+          <Button variant="outline" onClick={() => {
+            setIsModalOpenDeleteStockEntry(false);
+            setDeleteEntryId('');
+          }
+          } className="mr-2">
+            Hủy
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Modal thông báo */}
+      <Modal
+        isOpen={isAlertModalOpen}
+        onClose={() => setIsAlertModalOpen(false)}
+        title={alertType === 'success' ? 'Thành công' : 'Lỗi'}
+        className="p-8"
+      >
+        <div className="flex justify-center mb-4">
+          <LottieAnimation 
+            animationData={alertType === 'success' ? successAnimation : errorAnimation} 
+            loop={false} 
+            autoplay={true} 
+            width={100} 
+            height={100} 
+          />
+        </div>
+        <Label className="text-gray-800 font-medium mb-6 text-center">
+          {alertMessage}
+        </Label>
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={() => setIsAlertModalOpen(false)} className="mr-2">
+            Đóng
+          </Button>
+        </div>
+      </Modal>
+
+      
 
     </div>
   )
 }
+

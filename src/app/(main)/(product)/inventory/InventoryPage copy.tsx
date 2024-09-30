@@ -153,6 +153,7 @@ export default function InventoryPage() {
   const [alertMessage, setAlertMessage] = useState('')
   const [open, setOpen] = useState(false)
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+  
 
 
 
@@ -606,7 +607,7 @@ export default function InventoryPage() {
                         <Button variant="outline" size="sm" className="mr-2" onClick={() => handleEditSupplier(supplier)}>
                           <Edit className="h-4 w-4 mr-1" /> Sửa
                         </Button>
-                        <Button disabled variant="destructive" size="sm" onClick={() => handleDeleteSupplier(supplier._id)}>
+                        <Button  variant="destructive" size="sm" onClick={() => handleDeleteSupplier(supplier._id)}>
                           <Trash2 className="h-4 w-4 mr-1" /> Xóa
                         </Button>
                       </TableCell>
@@ -674,7 +675,7 @@ export default function InventoryPage() {
 
       {/* Dialog for adding new stock entry */}
       <Dialog open={isAddingStockEntry} onOpenChange={setIsAddingStockEntry}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Thêm phiếu nhập mới</DialogTitle>
             <DialogDescription></DialogDescription>
@@ -757,7 +758,7 @@ export default function InventoryPage() {
             <div>
               <Label htmlFor="payment_method">Phương thức thanh toán</Label>
               <Select
-                value={newStockEntry.payment.method}
+                value={newStockEntry.payment.method || 'Tiền mặt'}
                 onValueChange={(value) => setNewStockEntry({
                   ...newStockEntry,
                   payment: {
@@ -779,7 +780,7 @@ export default function InventoryPage() {
             <div className="col-span-2">
               <Label htmlFor="payment_status">Trạng thái thanh toán</Label>
               <Select
-                value={newStockEntry.payment.status}
+                value={newStockEntry.payment.status || 'Chưa thanh toán'}
                 onValueChange={(value) => setNewStockEntry({
                   ...newStockEntry,
                   payment: {
@@ -895,34 +896,34 @@ export default function InventoryPage() {
             setStockEntryDetails([]);
           }
         }} >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết phiếu nhập</DialogTitle>
-            <DialogDescription></DialogDescription>
+            <DialogDescription>Xem và cập nhật thông tin phiếu nhập</DialogDescription>
           </DialogHeader>
           {selectedStockEntry && (
-            <div>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Nhà cung cấp</Label>
-                  <div>{selectedStockEntry.supplier_id.name}</div>
+                  <Label className="text-sm text-gray-500">Nhà cung cấp</Label>
+                  <div className="mt-1">{selectedStockEntry.supplier_id.name}</div>
                 </div>
                 <div>
-                  <Label>Kho</Label>
-                  <div>{selectedStockEntry.warehouse_id.name}</div>
+                  <Label className="text-sm text-gray-500">Kho</Label>
+                  <div className="mt-1">{selectedStockEntry.warehouse_id.name}</div>
                 </div>
                 <div>
-                  <Label>Ngày nhận hàng</Label>
-                  <div>{new Date(selectedStockEntry.date_received).toLocaleDateString()}</div>
+                  <Label className="text-sm text-gray-500">Ngày nhận hàng</Label>
+                  <div className="mt-1">{new Date(selectedStockEntry.date_received).toLocaleDateString()}</div>
                 </div>
                 <div>
-                  <Label>Tổng giá trị</Label>
-                  <div>{selectedStockEntry.total_value.toLocaleString()} VND</div>
+                  <Label className="text-sm text-gray-500">Tổng giá trị</Label>
+                  <div className="mt-1">{selectedStockEntry.total_value.toLocaleString()} VND</div>
                 </div>
               </div>
 
-              <div className="mb-4">
-                <Label>Chi tiết sản phẩm</Label>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Chi tiết sản phẩm</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -951,114 +952,110 @@ export default function InventoryPage() {
                 </Table>
               </div>
 
-              <div className="mb-4">
-                <Label>Thông tin thanh toán</Label>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Thông tin thanh toán</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Cần thanh toán thêm</Label>
-                    <div className="font-semibold text-red-600">
+                    <Label className="text-sm text-gray-500">Cần thanh toán thêm</Label>
+                    <div className="mt-1 text-red-600 font-semibold">
                       {(selectedStockEntry.total_value - selectedStockEntry.payment.amount - (selectedStockEntry.payment.last_amount || 0)).toLocaleString()} VND
                     </div>
                   </div>
                   <div>
-                    <Label>Trạng thái thanh toán</Label>
-                    <div className={`font-semibold ${
-                        selectedStockEntry.payment.status === 'Đã thanh toán đủ' 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        {selectedStockEntry.payment.status}
-                      </div>
+                    <Label className="text-sm text-gray-500">Trạng thái thanh toán</Label>
+                    <div className={`mt-1 font-semibold ${selectedStockEntry.payment.status === 'Đã thanh toán đủ' ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedStockEntry.payment.status}
+                    </div>
                   </div>
                   <div>
-                    <Label>Phương thức thanh toán lần đầu</Label>
-                    <div>{selectedStockEntry.payment.method}</div>
+                    <Label className="text-sm text-gray-500">Phương thức thanh toán lần đầu</Label>
+                    <div className="mt-1">{selectedStockEntry.payment.method}</div>
                   </div>
                   <div>
-                    <Label>Phương thức thanh toán lần sau</Label>
-                    <div>{selectedStockEntry.payment.last_method}</div>
+                    <Label className="text-sm text-gray-500">Phương thức thanh toán lần sau</Label>
+                    <div className="mt-1">{selectedStockEntry.payment.last_method || 'Chưa có'}</div>
                   </div>
                 </div>
               </div>
 
               {!isUpdatingPayment && (
-  <div>
-    <Label>Cập nhật thanh toán</Label>
-    <div className="grid grid-cols-2 gap-4 mt-2">
-      <div>
-        <Label>Đã thanh toán lần đầu</Label>
-        <div className="font-semibold">{selectedStockEntry.payment.amount.toLocaleString()} VND</div>
-      </div>
-      <div>
-        <Label>Số tiền thanh toán lần sau</Label>
-        <div className="font-semibold">{selectedStockEntry.payment.last_amount ? selectedStockEntry.payment.last_amount.toLocaleString() : 0} VND</div>
-      </div>
-      <div>
-        <Label>Số tiền thanh toán thêm</Label>
-        <Input
-          type="number"
-          placeholder="Nhập số tiền"
-          onChange={(e) => {
-            const additionalAmount = parseFloat(e.target.value) || 0;
-            const newAmount = selectedStockEntry.payment.amount + selectedStockEntry.payment.last_amount + additionalAmount;
-            const newStatus = newAmount >= selectedStockEntry.total_value ? 'Đã thanh toán đủ' : 'Còn nợ';
-            
-            setSelectedStockEntry({
-              ...selectedStockEntry,
-              payment: {
-                ...selectedStockEntry.payment,
-                last_amount: additionalAmount,
-                total_amount: newAmount,
-                status: newStatus,
-                last_method: selectedStockEntry.payment.last_method
-              }
-            });
-          }}
-        />
-      </div>
-      <div>
-        <Label>Tổng số tiền sau khi cập nhật</Label>
-        <div className="font-semibold text-green-600">
-          {(selectedStockEntry.payment.amount + (selectedStockEntry.payment.last_amount || 0)).toLocaleString()} VND
-        </div>
-      </div>
-      <div>
-        <Label>Phương thức thanh toán</Label>
-        <Select
-          value={selectedStockEntry.payment.last_method}
-          onValueChange={(value) => setSelectedStockEntry({
-            ...selectedStockEntry,
-            payment: {
-              ...selectedStockEntry.payment,
-              last_method: value
-            }
-          })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn phương thức thanh toán" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-            <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-            <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-    <Button 
-  onClick={() => handleUpdatePayment(selectedStockEntry.payment)} 
-  className="mt-4"
-  disabled={
-    !selectedStockEntry.payment.last_amount || 
-    selectedStockEntry.payment.last_amount <= 0 ||
-    (selectedStockEntry.payment.amount + selectedStockEntry.payment.last_amount) >= selectedStockEntry.total_value
-  }
->
-  Cập nhật thanh toán
-</Button>
-  </div>
-)}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Cập nhật thanh toán</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-500">Đã thanh toán lần đầu</Label>
+                      <div className="mt-1 font-semibold">{selectedStockEntry.payment.amount.toLocaleString()} VND</div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Số tiền thanh toán lần sau</Label>
+                      <div className="mt-1 font-semibold">{selectedStockEntry.payment.last_amount ? selectedStockEntry.payment.last_amount.toLocaleString() : 0} VND</div>
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="additional-payment">Số tiền thanh toán thêm</Label>
+                      <Input
+                        id="additional-payment"
+                        type="number"
+                        placeholder="Nhập số tiền"
+                        onChange={(e) => {
+                          const additionalAmount = parseFloat(e.target.value) || 0;
+                          const newAmount = selectedStockEntry.payment.amount + selectedStockEntry.payment.last_amount + additionalAmount;
+                          const newStatus = newAmount >= selectedStockEntry.total_value ? 'Đã thanh toán đủ' : 'Còn nợ';
+                          
+                          setSelectedStockEntry({
+                            ...selectedStockEntry,
+                            payment: {
+                              ...selectedStockEntry.payment,
+                              last_amount: additionalAmount,
+                              total_amount: newAmount,
+                              status: newStatus,
+                              last_method: selectedStockEntry.payment.last_method
+                            }
+                          });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Tổng số tiền sau khi cập nhật</Label>
+                      <div className="mt-1 text-green-600 font-semibold">
+                        {(selectedStockEntry.payment.amount + (selectedStockEntry.payment.last_amount || 0)).toLocaleString()} VND
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="payment-method">Phương thức thanh toán</Label>
+                      <Select
+                        value={selectedStockEntry.payment.last_method}
+                        onValueChange={(value) => setSelectedStockEntry({
+                          ...selectedStockEntry,
+                          payment: {
+                            ...selectedStockEntry.payment,
+                            last_method: value
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="payment-method">
+                          <SelectValue placeholder="Chọn phương thức thanh toán" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                          <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                          <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  onClick={() => handleUpdatePayment(selectedStockEntry.payment)} 
+                >
+                  Cập nhật thanh toán
+                </Button>
+                <Button variant="outline" onClick={() => setIsViewingDetails(false)}>
+                  Đóng
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
