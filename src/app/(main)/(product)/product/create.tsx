@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import handleAPI from '@/services/handleAPI';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
     Select,
@@ -14,6 +13,8 @@ import {
     SelectTrigger,
     SelectValue,
   } from "@/components/ui/select"
+import useAPI, { mutateAPI } from '@/services/handleAPI';
+import { Category } from '@/app/types';
 
   
   
@@ -21,13 +22,6 @@ const CreateProduct = () => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [category_id, setCategoryId] = useState('');
-    interface Category {
-        _id: string;
-        name: string;
-    }
-    
-    const [categories, setCategories] = useState<Category[]>([]);
-  
     const [unit_price, setUnitPrice] = useState('');
     const [import_price, setImportPrice] = useState('');
     const [quantity_in_stock, setQuantityInStock] = useState('');
@@ -38,13 +32,18 @@ const CreateProduct = () => {
     const [alertMessage, setAlertMessage] = useState('');
     const [importPriceDisplay, setImportPriceDisplay] = useState('');
     const [unitPriceDisplay, setUnitPriceDisplay] = useState('');
-    
+
+    // Use SWR hook to fetch categories
+    const { data: categoriesData, isError: categoriesError } = useAPI('/category/getAll');
+    const { mutate: mutateProducts } = useAPI('/product/getAll');
+    const categories: Category[] = categoriesData?.data || [];
 
     // Function to handle formatting the price fields
     const formatCurrency = (value: string) => {
         const numberValue = value.replace(/[^0-9]/g, '');
         return numberValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(numberValue)) : '';
     };
+
     // Function to handle price input changes
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>, displaySetter: React.Dispatch<React.SetStateAction<string>>) => {
         const inputValue = e.target.value;
@@ -53,6 +52,7 @@ const CreateProduct = () => {
         setter(numericValue);
         displaySetter(inputValue);
     };
+
     // Function to handle price input blur
     const handlePriceBlur = (value: string, setter: React.Dispatch<React.SetStateAction<string>>, displaySetter: React.Dispatch<React.SetStateAction<string>>) => {
         const formattedValue = formatCurrency(value);
@@ -60,47 +60,49 @@ const CreateProduct = () => {
         setter(value.replace(/[^0-9]/g, '')); // Keep only numeric values
     };
 
-    const handleGetAllCategory = async () => {
-        const response = await handleAPI('/category/getAll', 'get');
-        return response.data.data || [];
-    }
-
-    useEffect(() => {
-        handleGetAllCategory().then((data) => {
-            setCategories(data);
-        }).catch((error) => {
-            console.error('Error fetching categories:', error);
-        });
-    }, []);
-
-
     const handleCreateProduct = async () => {
         try {
-            const response = await handleAPI('/product/create', {
-                name,
-                description,
-                category_id,
-                unit,
-                unit_price:Number(unit_price),
-                import_price: Number(import_price),
-                quantity_in_stock: Number(quantity_in_stock),
-                reorder_level: reorder_level ? Number(reorder_level) : undefined,
-            }, 'post');
+          const data = {
+            name,
+            description,
+            category_id,
+            unit,
+            unit_price: Number(unit_price),
+            import_price: Number(import_price),
+            quantity_in_stock: Number(quantity_in_stock),
+            reorder_level: reorder_level ? Number(reorder_level) : undefined,
+          };
+    
+         await mutateAPI('/product/create', data, 'post');
+         
+            setAlertType('success');
+            setAlertMessage('Tạo sản phẩm thành công');
+            // Clear form fields after successful creation
+            setName('');
+            setDescription('');
+            setCategoryId('');
+            setUnit('');
+            setUnitPrice('');
+            setImportPrice('');
+            setQuantityInStock('');
+            setReorderLevel('');
+            setImportPriceDisplay('');
+            setUnitPriceDisplay('');
+            // Revalidate the product list
+            mutateProducts();
 
-            if (response.status === 201) {
-                setAlertType('success');
-                setAlertMessage('Tạo sản phẩm thành công');
-            } else {
-                setAlertType('error');
-                setAlertMessage('Tạo sản phẩm thất bại');
-            }
-            setOpen(true);
         } catch (error) {
-            setAlertType('error');
-            setAlertMessage('Có lỗi xảy ra khi tạo sản phẩm');
-            setOpen(true);
+          console.error('Error creating product:', error);
+          setAlertType('error');
+          setAlertMessage('Có lỗi xảy ra khi tạo sản phẩm');
+        } finally {
+          setOpen(true);
         }
-    };
+      };
+
+    if (categoriesError) {
+        return <div>Error loading categories</div>;
+    }
 
     return (
         <div className="">

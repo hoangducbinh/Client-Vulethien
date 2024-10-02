@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface AuthState {
+  token: string | null;
   isAuthenticated: boolean;
+  setToken: (token: string) => void;
   setAuthenticated: (auth: boolean) => void;
   logout: () => void;
 }
@@ -10,16 +12,17 @@ interface AuthState {
 const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      isAuthenticated: false, // Default value
+      token: null,
+      isAuthenticated: false,
+      setToken: (token) => set({ token, isAuthenticated: true }),
       setAuthenticated: (auth) => set({ isAuthenticated: auth }),
       logout: () => {
-        set({ isAuthenticated: false });
+        set({ token: null, isAuthenticated: false });
         localStorage.removeItem('auth-storage');
-         // Clear the stored authentication state
       }
     }),
     {
-      name: 'auth-storage', // Key for localStorage
+      name: 'auth-storage',
       storage: {
         getItem: (key) => {
           const value = localStorage.getItem(key);
@@ -31,7 +34,7 @@ const useAuthStore = create<AuthState>()(
         removeItem: (key) => {
           localStorage.removeItem(key);
         },
-      }, // Custom storage adapter
+      },
     }
   )
 );

@@ -1,10 +1,10 @@
 'use client'
 
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import handleAPI from '@/services/handleAPI'
 import { Label } from '@radix-ui/react-label'
-import React, { useState } from 'react'
+import { Textarea } from '@/components/ui/textarea'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -14,7 +14,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Textarea } from '@/components/ui/textarea'
+import useAPI, { mutateAPI } from '@/services/handleAPI'
 
 const CreateCategory = () => {
     const [category, setCategory] = useState('')
@@ -23,23 +23,26 @@ const CreateCategory = () => {
     const [alertType, setAlertType] = useState('')
     const [alertMessage, setAlertMessage] = useState('')
 
+    const { mutate: mutateCategories } = useAPI('/category/getAll')
+
     const handleCreateCategory = async () => {
         try {
-            const response = await handleAPI('/category/create', { name: category, description: description }, 'post')
-            if (response.status === 201) {
+            const response = await mutateAPI('/category/create', { name: category, description: description }, 'post')
+            
                 setAlertType('success')
                 setAlertMessage('Tạo danh mục thành công')
-            } else {
-                setAlertType('error')
-                setAlertMessage('Tạo danh mục thất bại')
-            }
-            setOpen(true)
-            console.log('Response', response)
+                // Clear form fields after successful creation
+                setCategory('')
+                setDescription('')
+                // Revalidate the category list
+                mutateCategories()
+            
         } catch (error: any) {
             setAlertType('error')
             setAlertMessage(error.message || 'Có lỗi xảy ra khi tạo danh mục.')
+            console.error('Error creating category:', error)
+        } finally {
             setOpen(true)
-            console.log('Error', error)
         }
     }
 
@@ -52,7 +55,7 @@ const CreateCategory = () => {
                     <Label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Tên danh mục</Label>
                     <Input
                         id="category"
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2  transition duration-150 ease-in-out"
                         placeholder="Nhập tên danh mục"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
@@ -63,7 +66,7 @@ const CreateCategory = () => {
                     <Label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Mô tả</Label>
                     <Textarea
                         id="description"
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2  transition duration-150 ease-in-out"
                         placeholder="Nhập mô tả cho danh mục"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -72,7 +75,7 @@ const CreateCategory = () => {
                 </div>
                 
                 <Button
-                    className="w-full "
+                    className="w-full"
                     onClick={handleCreateCategory}
                 >
                     Tạo danh mục

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import handleAPI from '@/services/handleAPI';
+import handleAPI, { mutateAPI } from '@/services/handleAPI';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/store';
@@ -14,9 +14,9 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { isAuthenticated, setAuthenticated } = useAuthStore(state => ({
+  const { isAuthenticated, setToken } = useAuthStore(state => ({
     isAuthenticated: state.isAuthenticated,
-    setAuthenticated: state.setAuthenticated
+    setToken: state.setToken
   }));
 
   useEffect(() => {
@@ -30,10 +30,10 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await handleAPI('/auth/login', { email, password }, 'post');
+      const response = await mutateAPI('/auth/login', { email, password }, 'post');
       
-      if (response.status === 200) {
-        setAuthenticated(true);
+      if (response && response.token) {
+        setToken(response.token);
         router.push('/home');
       } else {
         setError('Đăng nhập thất bại, vui lòng thử lại.');

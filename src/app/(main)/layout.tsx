@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <BarChart2 className="mr-2 h-4 w-4" />
             Dashboard
           </Link>
-          <Link href="/home" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/customer" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <Users className="mr-2 h-4 w-4" />
             Khách hàng
           </Link>

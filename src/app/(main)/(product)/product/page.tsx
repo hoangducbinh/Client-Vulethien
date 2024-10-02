@@ -11,7 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,9 +30,9 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CreateCategory from '../category/create';
-import handleAPI from '@/services/handleAPI';
 import CreateProduct from './create';
 import UpdateProduct from "./update";
+import useAPI from '@/services/handleAPI';
 
 const ProductPage = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -44,40 +44,29 @@ const ProductPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
+  
+  
+  
+
+  const { data: categoriesData, isLoading: isLoadingCategories } = useAPI('/category/getAll');
+  const { data: productsData, isLoading: isLoadingProducts, mutate: mutateProducts } = useAPI(
+    selectedCategory ? `/product/getbyCategory/${selectedCategory}` : '/product/getAll'
+  );
 
   useEffect(() => {
-    handleGetCategory();
-  }, []);
+    if (categoriesData) {
+      setCategories(categoriesData.data || []);
+      if (categoriesData.data.length > 0 && selectedCategory === null) {
+        setSelectedCategory(categoriesData.data[0]._id);
+      }
+    }
+  }, [categoriesData, selectedCategory]);
 
   useEffect(() => {
-    if (categories.length > 0 && selectedCategory === null) {
-      setSelectedCategory(categories[0]._id);
+    if (productsData) {
+      setProducts(productsData.data || []);
     }
-  }, [categories]);
-
-  useEffect(() => {
-    if (selectedCategory !== null) {
-      handleGetProductbyCategory();
-    }
-  }, [selectedCategory]);
-
-  const handleGetCategory = async () => {
-    try {
-      const response = await handleAPI('/category/getAll', 'get');
-      setCategories(response.data.data || []);
-    } catch (error) {
-      console.log('Error', error);
-    }
-  };
-
-  const handleGetProductbyCategory = async () => {
-    try {
-      const response = await handleAPI(`/product/getbyCategory/${selectedCategory}`, 'get');
-      setProducts(response.data.data);
-    } catch (error) {
-      console.log('Error', error);
-    }
-  }
+  }, [productsData]);
 
   const handleCategoryClick = (category_Id: number) => {
     setSelectedCategory(category_Id);
@@ -103,7 +92,7 @@ const ProductPage = () => {
   }
 
   const handleProductUpdate = () => {
-    handleGetProductbyCategory();
+    mutateProducts();
   };
 
   return (
@@ -120,6 +109,7 @@ const ProductPage = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Thêm danh mục mới</DialogTitle>
+                <DialogDescription></DialogDescription>
               </DialogHeader>
               <CreateCategory />
             </DialogContent>
@@ -133,6 +123,7 @@ const ProductPage = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+                <DialogDescription></DialogDescription>
               </DialogHeader>
               <CreateProduct />
             </DialogContent>
@@ -221,6 +212,7 @@ const ProductPage = () => {
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Thông tin chi tiết sản phẩm</DialogTitle>
+                            <DialogDescription></DialogDescription>
                           </DialogHeader>
                           {selectedProduct && (
                             <UpdateProduct 

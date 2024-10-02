@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import handleAPI from '@/services/handleAPI';
+import handleAPI, { mutateAPI, useAPI } from '@/services/handleAPI';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit, Save, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -19,18 +19,19 @@ interface UpdateProductProps {
 const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
   const [formData, setFormData] = useState(product);
   const [isEditing, setIsEditing] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
   const [alertType, setAlertType] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [open, setOpen] = useState(false);
   const [importPriceDisplay, setImportPriceDisplay] = useState('');
   const [unitPriceDisplay, setUnitPriceDisplay] = useState('');
 
+  const { data: categoriesData, isError: categoriesError } = useAPI('/category/getAll');
+  const categories = categoriesData?.data || [];
+
   useEffect(() => {
     setFormData(product);
     setImportPriceDisplay(formatCurrency(product.import_price.toString()));
     setUnitPriceDisplay(formatCurrency(product.unit_price.toString()));
-    handleGetAllCategory();
   }, [product]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -41,7 +42,7 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await handleAPI(`/product/update/${product._id}`, formData, 'put');
+      const response = await mutateAPI(`/product/update/${product._id}`, formData, 'put');
       onUpdate();
       setIsEditing(false);
       if (response.status === 200) {
@@ -51,21 +52,12 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
         setAlertType('error');
         setAlertMessage('Cập nhật sản phẩm thất bại');
       }
-      setOpen(true);
     } catch (error) {
       console.error('Error updating product:', error);
       setAlertType('error');
       setAlertMessage('Đã xảy ra lỗi khi cập nhật sản phẩm');
+    } finally {
       setOpen(true);
-    }
-  };
-
-  const handleGetAllCategory = async () => {
-    try {
-      const response = await handleAPI('/category/getAll', 'get');
-      setCategories(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -80,6 +72,10 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
     const displayValue = formatCurrency(inputValue);
     field === 'import_price' ? setImportPriceDisplay(displayValue) : setUnitPriceDisplay(displayValue);
   };
+
+  if (categoriesError) {
+    return <div>Error loading categories</div>;
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -159,7 +155,7 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
                     <SelectValue placeholder="Chọn danh mục" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(category => (
+                    {categories.map((category: any) => (
                       <SelectItem key={category._id} value={category._id}>
                         {category.name}
                       </SelectItem>
@@ -210,7 +206,7 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
               </div>
               <div>
                 <Label className="font-medium">Danh mục</Label>
-                <p>{categories.find(category => category._id === product.category_id)?.name}</p>
+                <p>{categories.find((category: any) => category._id === product.category_id)?.name}</p>
               </div>
             </div>
             <div>

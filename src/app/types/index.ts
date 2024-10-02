@@ -37,4 +37,12 @@ export interface Supplier {
   order_date: Date
  }
  
+ export interface Category {
+  _id: string
+  name: string
+ }
+
+ export interface NewCategory {
+  name: string
+ }
  

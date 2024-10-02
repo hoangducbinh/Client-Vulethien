@@ -62,7 +62,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import handleAPI from '@/services/handleAPI'
+import useAPI,{ mutateAPI} from '@/services/handleAPI'
 import Modal from '@/app/components/Modal'
 import LottieAnimation from '@/app/components/LottieAnimation'
 import trash from '@/lottie/trash.json'
@@ -167,6 +167,18 @@ export default function InventoryPage() {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<'success' | 'error'>('success');
 
+  const { data: suppliersData, isLoading: isLoadingSuppliers, mutate: mutateSuppliers } = useAPI('/supplier/getAll');
+  const { data: stockEntriesData, isLoading: isLoadingStockEntries, mutate: mutateStockEntries } = useAPI('/stockEntry/getAll');
+  const { data: warehousesData, isLoading: isLoadingWarehouses } = useAPI('/warehouse/getAll');
+  const { data: productsData, isLoading: isLoadingProducts } = useAPI('/product/getAll');
+
+  useEffect(() => {
+    if (suppliersData) setSuppliers(suppliersData.data);
+    if (stockEntriesData) setStockEntries(stockEntriesData.stockEntries);
+    if (warehousesData) setWarehouses(warehousesData.data);
+    if (productsData) setProducts(productsData.data);
+  }, [suppliersData, stockEntriesData, warehousesData, productsData]);
+
 
 
 
@@ -187,108 +199,42 @@ export default function InventoryPage() {
 
 
 
-
-  useEffect(() => {
-    fetchSuppliers()
-    fetchStockEntries()
-    fetchWarehouses()
-    fetchProducts()
-  }, [])
-
-
-
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await handleAPI('/warehouse/getAll', 'get')
-      setWarehouses(response.data.data)
-    } catch (error) {
-      console.error('Error fetching warehouses:', error)
-    }
-  }
-
-  const fetchProducts = async () => {
-    try {
-      const response = await handleAPI('/product/getAll', 'get')
-      setProducts(response.data.data)
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    }
-  }
-
-
-  const fetchStockEntries = async () => {
-    try {
-      const response = await handleAPI('/stockEntry/getAll', 'get')
-      console.log(response.data.stockEntries)
-      setStockEntries(
-        response.data.stockEntries
-      )
-    } catch (error) {
-      console.error('Error fetching stock entries:', error)
-    }
-  }
-
-
-  const fetchSuppliers = async () => {
-    try {
-      const response = await handleAPI('/supplier/getAll', 'get')
-      setSuppliers(response.data.data)
-    } catch (error) {
-      console.error('Error fetching suppliers:', error)
-    }
-  }
-
-  const handleAddSupplier = async () => {
-    if (newSupplier.name === '' || newSupplier.contact_info === '' || newSupplier.address === '') {
-      toast.error('Vui lòng điền đầy đủ thông tin nhà cung cấp!')
-      return
-    }
-    try {
-      const response = await handleAPI('/supplier/create', newSupplier, 'post')
-      setSuppliers([...suppliers, response.data.data])
-      setNewSupplier({ name: '', contact_info: '', address: '' })
-      toast.success('Thêm nhà cung cấp thành công!')
-    } catch (error) {
-      console.error('Error adding supplier:', error)
-    }
-  }
-
   const handleEditSupplier = async (supplier: Supplier) => {
     setEditingSupplier(supplier)
   }
 
   const handleUpdateSupplier = async () => {
-    if (!editingSupplier) return
+    if (!editingSupplier) return;
     if (editingSupplier.name === '' || editingSupplier.contact_info === '' || editingSupplier.address === '') {
-      toast.error('Vui lòng điền đầy đủ thông tin nhà cung cấp!')
-      return
+      toast.error('Vui lòng điền đầy đủ thông tin nhà cung cấp!');
+      return;
     }
     try {
-      const response = await handleAPI(`/supplier/update`, editingSupplier, 'put')
-      setSuppliers(suppliers.map(s => s._id === editingSupplier._id ? response.data.data : s))
-      toast.success('Cập nhật thành công!')
-      setEditingSupplier(null)
+      await mutateAPI(`/supplier/update`, editingSupplier, 'put');
+      mutateSuppliers();
+      toast.success('Cập nhật thành công!');
+      setEditingSupplier(null);
     } catch (error) {
-      console.error('Error updating supplier:', error)
+      console.error('Error updating supplier:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật nhà cung cấp!');
     }
-  }
+  };
   const confirmDeleteSupplier = async () => {
-
     try {
-      await handleAPI(`/supplier/delete/${supplierIdToDelete}`, {}, 'delete');
-      setSuppliers(suppliers.filter(s => s._id !== supplierIdToDelete));
+      await mutateAPI(`/supplier/delete/${supplierIdToDelete}`, {}, 'delete');
+      mutateSuppliers();
       setIsModalOpen(false);
+      toast.success('Xóa nhà cung cấp thành công!');
     } catch (error) {
       console.error('Error deleting supplier:', error);
+      toast.error('Có lỗi xảy ra khi xóa nhà cung cấp!');
     }
-
-  }
+  };
 
 
   const handleAddStockEntry = async () => {
     try {
-      const response = await handleAPI('/stockEntry/create', {
+      await mutateAPI('/stockEntry/create', {
         supplier_id: newStockEntry.supplier_id._id,
         warehouse_id: newStockEntry.warehouse_id._id,
         date_received: newStockEntry.date_received,
@@ -306,24 +252,22 @@ export default function InventoryPage() {
         }
       }, 'post');
 
-      if (response.status === 201) {
-        toast.success('Tạo phiếu nhập thành công!')
-        setIsAddingStockEntry(false);
-        setNewStockEntry({
-          _id: '',
-          supplier_id: { _id: '', name: '', contact_info: '', address: '' },
-          warehouse_id: { _id: '', name: '' },
-          date_received: '',
-          total_value: 0,
-          stockEntryDetails: [],
-          payment: {
-            amount: 0,
-            status: '',
-            method: ''
-          },
-        });
-        fetchStockEntries();
-      }
+      toast.success('Tạo phiếu nhập thành công!');
+      setIsAddingStockEntry(false);
+      setNewStockEntry({
+        _id: '',
+        supplier_id: { _id: '', name: '', contact_info: '', address: '' },
+        warehouse_id: { _id: '', name: '' },
+        date_received: '',
+        total_value: 0,
+        stockEntryDetails: [],
+        payment: {
+          amount: 0,
+          status: '',
+          method: ''
+        },
+      });
+      mutateStockEntries();
     } catch (error) {
       toast.error('Có lỗi xảy ra khi thêm phiếu nhập!');
       console.error('Error adding stock entry:', error);
@@ -331,10 +275,9 @@ export default function InventoryPage() {
   };
   const fetchStockEntryDetails = async (stockEntryId: string) => {
     try {
-      const response = await handleAPI(`/stockEntry/getDetails/${stockEntryId}`, 'get');
-      setStockEntryDetails(response.data.stockEntryDetails);
+      const response = await mutateAPI(`/stockEntry/getDetails/${stockEntryId}`, {}, 'get');
+      setStockEntryDetails(response.stockEntryDetails);
     } catch (error) {
-
       console.error('Error fetching stock entry details:', error);
     }
   };
@@ -343,7 +286,7 @@ export default function InventoryPage() {
     if (!selectedStockEntry) return;
     setIsUpdatingPayment(true);
     try {
-      const response = await handleAPI(`/payment/update/${selectedStockEntry.payment._id}`, {
+      await mutateAPI(`/payment/update/${selectedStockEntry.payment._id}`, {
         amount: updatedPayment.amount,
         method: updatedPayment.method,
         status: updatedPayment.status,
@@ -351,12 +294,11 @@ export default function InventoryPage() {
         last_method: updatedPayment.last_method,
         total_amount: updatedPayment.total_amount
       }, 'put');
-      if (response.status === 200) {
-        fetchStockEntries();
-        setIsViewingDetails(false);
-        setSelectedStockEntry(null);
-        toast.success('Cập nhật thanh toán thành công!');
-      }
+      
+      mutateStockEntries();
+      setIsViewingDetails(false);
+      setSelectedStockEntry(null);
+      toast.success('Cập nhật thanh toán thành công!');
     } catch (error) {
       console.error('Error updating payment:', error);
       toast.error('Có lỗi xảy ra khi cập nhật thanh toán!');
@@ -375,15 +317,16 @@ export default function InventoryPage() {
 
 
   const confirmDeleteStockEntry = async (stockEntryId: string) => {
-
     try {
-      await handleAPI(`/stockEntry/delete/${stockEntryId}`, {}, 'delete')
-      fetchStockEntries()
+      await mutateAPI(`/stockEntry/delete/${stockEntryId}`, {}, 'delete');
+      mutateStockEntries();
       setIsModalOpenDeleteStockEntry(false);
+      toast.success('Xóa phiếu nhập thành công!');
     } catch (error) {
-      console.error('Error deleting stock entry:', error)
+      console.error('Error deleting stock entry:', error);
+      toast.error('Có lỗi xảy ra khi xóa phiếu nhập!');
     }
-  }
+  };
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -395,14 +338,13 @@ export default function InventoryPage() {
 
   const onSubmitSupplier = async (data: any) => {
     try {
-      const response = await handleAPI('/supplier/create', data, 'post');
-      setSuppliers([...suppliers, response.data.data]);
+      await mutateAPI('/supplier/create', data, 'post');
+      mutateSuppliers();
       reset();
       setAlertMessage('Thêm nhà cung cấp thành công!');
       setAlertType('success');
       setOpen(true);
     } catch (error: any) {
-      //console.error('Error adding supplier:', error);
       setAlertMessage('Tên nhà cung cấp đã tồn tại!');
       setAlertType('error');
       setOpen(true);
@@ -847,8 +789,7 @@ export default function InventoryPage() {
                 <SelectTrigger id="payment_method">
                   <SelectValue placeholder="Chọn phương thức" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                <SelectContent>                  <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
                   <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
                   <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
                 </SelectContent>
@@ -1256,4 +1197,3 @@ export default function InventoryPage() {
     </div>
   )
 }
-

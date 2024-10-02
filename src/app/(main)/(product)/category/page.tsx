@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
 
@@ -18,12 +19,11 @@ const CategoryList: React.FC<CategoryListProps> = ({ categories, selectedCategor
     <div className="w-1/4 bg-gray-100 p-4 overflow-y-auto border-r">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Danh mục</h2>
-        <button
+        <Button
           onClick={onAddCategory}
-          className="bg-blue-500 text-white px-3 py-1 rounded-lg flex items-center"
         >
           <FaPlus className="mr-2" /> Thêm danh mục
-        </button>
+        </Button>
       </div>
       <ul>
         {categories.map(category => (

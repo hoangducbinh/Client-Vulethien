@@ -1,3 +1,4 @@
+import useAuthStore from "@/store/store";
 import axios from "axios";
 import queryString from "query-string";
 
@@ -13,13 +14,14 @@ const axiosClient = axios.create(
 )
 
 axiosClient.interceptors.request.use(async (config: any) => {
+    const token = useAuthStore.getState().token;
     config.headers = {
-        Authorization: '',
-        Accept: 'application/json',
-        ...config.headers,
+      Authorization: token ? `Bearer ${token}` : '',
+      Accept: 'application/json',
+      ...config.headers,
     };
-    return config
-})
+    return config;
+  });
 
 axiosClient.interceptors.response.use(
     response => {
