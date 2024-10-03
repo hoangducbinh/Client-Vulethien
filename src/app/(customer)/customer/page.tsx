@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table"
 import { Bell, User, ShoppingBag, Heart, MapPin, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function CustomerHome() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -45,11 +46,17 @@ export default function CustomerHome() {
     { type: 'warning', message: 'Đơn hàng DH-1230 đang được giao, dự kiến đến trong hôm nay' },
   ]
 
+  const router = useRouter()
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Xin chào, Hoàng Đức Bình</h1>
         <div className="flex items-center gap-4">
+        <Button onClick={() => router.push('/shopping')}>
+          <ShoppingBag className="mr-2 h-4 w-4" />
+          Giỏ hàng
+        </Button>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
@@ -244,7 +251,7 @@ export default function CustomerHome() {
 
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Sản phẩm đề xuất</h2>
-        <Link href="/listproduct">
+        <Link href="/allproducts">
           <Button variant="outline">
             Xem tất cả sản phẩm
             <ChevronRight className="ml-2 h-4 w-4" />

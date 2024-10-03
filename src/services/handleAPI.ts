@@ -49,6 +49,7 @@ export const mutateAPI = async (url: string, data: any, method: 'get' | 'post' |
     return response;
   } catch (error: any) {
     // Ném lỗi ra ngoài nếu có
+    console.log(error)
     throw error;
   }
 };

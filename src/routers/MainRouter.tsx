@@ -1,7 +1,6 @@
 'use client'
 
-import HomePage from '@/app/(main)/home/page';
-import Home from '@/app/page';
+import CustomerHome from '@/app/(customer)/customer/page';
 import useAuthStore from '@/store/store';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react'
@@ -13,7 +12,7 @@ const MainRouter = () => {
   useEffect(() => {
     // Redirect to home page if already authenticated
     if (isAuthenticated) {
-        router.push('/login');
+        router.push('/customer');
     }
 }, [isAuthenticated, router]);
 
@@ -21,10 +20,9 @@ const MainRouter = () => {
 if (isAuthenticated) {
     return null; // Or a loading indicator
 }
-
   return (
     <>
-    <HomePage/>
+    <CustomerHome/>
     </>
   )
 }

@@ -57,7 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Package className="mr-2 h-4 w-4" />
             Sản phẩm
           </Link>
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/order-manager" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <ShoppingCart className="mr-2 h-4 w-4" />
             Đơn hàng
           </Link>

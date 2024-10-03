@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/store';
-import LoginPage from '@/app/(auth)/login/page';
+import SigninPage from '@/app/(auth)/(customer)/signin/page';
 
 
 const AuthRouter = () => {
@@ -13,7 +13,7 @@ const AuthRouter = () => {
     useEffect(() => {
         // Redirect to home page if already authenticated
         if (isAuthenticated) {
-            router.push('/home');
+            router.push('/allproducts');
         }
     }, [isAuthenticated, router]);
 
@@ -22,7 +22,7 @@ const AuthRouter = () => {
         return null; // Or a loading indicator
     }
 
-    return <LoginPage />;
+    return <SigninPage />;
 };
 
 export default AuthRouter;
