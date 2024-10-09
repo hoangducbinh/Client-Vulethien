@@ -1,295 +1,149 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ShoppingCart, Package, Truck, CreditCard, Search, ChevronRight, AlertTriangle, Clock, CheckCircle } from 'lucide-react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart2, Search, ShoppingBag, ShoppingCart, Star, Truck, User } from 'lucide-react'
 import Link from 'next/link'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Bell, User, ShoppingBag, Heart, MapPin, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import useAPI from '@/services/handleAPI'; 
+import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { toast, ToastContainer } from 'react-toastify'
 
-export default function CustomerHome() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
-  const [notificationCount, setNotificationCount] = useState(3)
 
-  const recentOrders = [
-    { id: 'DH-1234', status: 'Đang xử lý', date: '2023-06-15', total: '15.500.000 ₫', items: 5 },
-    { id: 'DH-1233', status: 'Đã giao', date: '2023-06-10', total: '22.300.000 ₫', items: 8 },
-    { id: 'DH-1232', status: 'Đang vận chuyển', date: '2023-06-05', total: '18.430.000 ₫', items: 6 },
-  ]
 
-  const notifications = [
-    { type: 'info', message: 'Đơn hàng DH-1235 đã được xác nhận' },
-    { type: 'success', message: 'Ưu đãi mới: Giảm 10% cho đơn hàng trên 10 triệu' },
-    { type: 'warning', message: 'Đơn hàng DH-1230 đang được giao, dự kiến đến trong hôm nay' },
-  ]
 
-  const router = useRouter()
+
+
+
+export default function Component() {
+
+  // Fetch featured products from API
+  const { data: productsData, isLoading, isError } = useAPI('/product/getAll', 'get');
+  const products = productsData?.data || [];
+
+  // Lấy 8 sản phẩm ngẫu nhiên
+  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, 4);
+
+  const addToCart = useCallback((product: any) => {
+    const cartItem = {
+      id: product._id,
+      name: product.name,
+      price: product.unit_price,
+      quantity: 1,
+      stock: product.quantity_in_stock,
+      unit: product.unit,
+      image: product.image
+    }
+    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItemIndex = existingCart.findIndex((item: any) => item.id === cartItem.id)
+    
+    if (existingItemIndex > -1) {
+      existingCart[existingItemIndex].quantity += 1
+    } else {
+      existingCart.push(cartItem)
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(existingCart))
+    toast.success('Sản phẩm đã được thêm vào giỏ hàng', {
+      position: 'top-right',
+      autoClose: 1000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    })
+  }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Xin chào, Hoàng Đức Bình</h1>
-        <div className="flex items-center gap-4">
-        <Button onClick={() => router.push('/shopping')}>
-          <ShoppingBag className="mr-2 h-4 w-4" />
-          Giỏ hàng
-        </Button>
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            {notificationCount > 0 && (
-              <Badge variant="destructive" className="absolute -top-1 -right-1 px-1 min-w-[1.25rem] h-5">
-                {notificationCount}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <Bell className="mr-2 h-4 w-4 text-blue-500" />
-            <span>Đơn hàng DH-1235 đã được xác nhận</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Bell className="mr-2 h-4 w-4 text-green-500" />
-            <span>Ưu đãi mới: Giảm 10% cho đơn hàng trên 10 triệu</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Bell className="mr-2 h-4 w-4 text-yellow-500" />
-            <span>Đơn hàng DH-1230 đang được giao, dự kiến đến trong hôm nay</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="justify-center font-medium">
-            Xem tất cả thông báo
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="/vscode.png" alt="@customer" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Hoàng Đức Bình</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                customer@abc.com
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Thông tin tài khoản</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            <span>Lịch sử đơn hàng</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Heart className="mr-2 h-4 w-4" />
-            <span>Sản phẩm yêu thích</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <MapPin className="mr-2 h-4 w-4" />
-            <span>Địa chỉ giao hàng</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Cài đặt</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Đăng xuất</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-        </div>
-      </header>
-      
-      <div className="mb-8">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Tìm kiếm sản phẩm..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 pr-4 w-full max-w-md"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đơn hàng đang xử lý</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Đang chờ xác nhận</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng chi tiêu (30 ngày)</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">56.230.000 ₫</div>
-            <div className="flex items-center mt-1">
-              <Clock className="h-4 w-4 text-muted-foreground mr-1" />
-              <span className="text-xs text-muted-foreground">Cập nhật 5 phút trước</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đơn hàng đang giao</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <Progress value={66} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">2/3 đơn hàng đúng hạn</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sản phẩm trong giỏ hàng</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">Tổng giá trị: 4.500.000 ₫</p>
-          </CardContent>
-        </Card>
-      </div>
-
-
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Đơn hàng gần đây</h2>
-          <Link href="/allorders">
-            <Button variant="outline">
-              Xem tất cả đơn hàng
-              <ChevronRight className="ml-2 h-4 w-4" />
+    <div className="min-h-screen bg-white">
+      <ToastContainer />
+      <main className="container mx-auto px-4 py-8">
+        <section className="mb-16 bg-gradient-to-r from-blue-600 to-green-500 text-white py-10 rounded-lg shadow-lg">
+          <h1 className="text-5xl font-bold mb-4 text-center">Chào mừng đến với BeeBer Shop</h1>
+          <p className="text-xl text-center mb-8">Khám phá các sản phẩm chất lượng cao cho doanh nghiệp của bạn</p>
+          <div className="flex justify-center">
+            <Link href="/allproducts">
+            <Button size="lg" className="bg-white text-black hover:bg-gray-200 shadow-lg">
+              Khám phá ngay
             </Button>
-          </Link>
-        </div>
-        <Card>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã đơn hàng</TableHead>
-                  <TableHead>Ngày đặt</TableHead>
-                  <TableHead>Số lượng</TableHead>
-                  <TableHead>Tổng tiền</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.date}</TableCell>
-                    <TableCell>{order.items} sản phẩm</TableCell>
-                    <TableCell>{order.total}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        order.status === 'Đã giao' ? 'secondary' :
-                        order.status === 'Đang vận chuyển' ? 'default' : 'outline'
-                      }>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">Chi tiết</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+            </Link>
+          </div>
+        </section>
 
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Sản phẩm đề xuất</h2>
-        <Link href="/allproducts">
-          <Button variant="outline">
-            Xem tất cả sản phẩm
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center">Sản phẩm nổi bật</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {randomProducts.map((product: any, index: number) => ( // {{ edit_2 }}
+              <motion.div
+                key={index}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card key={product._id} className="flex flex-col">
+              <CardHeader>
+                <Image loading="lazy" placeholder="blur" blurDataURL={product.image} src={product.image} alt={product.name} width={200} height={200} className="w-full h-48 object-contain rounded-t-lg" />
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <CardTitle className="mb-2">{product.name}</CardTitle>
+                <div className="flex items-center mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                  ))}
+                  <span className="ml-2 text-sm text-gray-600">{product.rating}</span>
+                </div>
+                <p className="text-lg font-semibold mb-2">{product.unit_price.toLocaleString()} ₫/{product.unit}</p>
+                <Badge variant={product.quantity_in_stock > 0 ? "secondary" : "destructive"}>
+                  {product.quantity_in_stock > 0 ? `Còn ${product.quantity_in_stock} ${product.unit}` : 'Hết hàng'}
+                </Badge>
+                <p className="text-sm text-muted-foreground mt-2">{product.category}</p>
+                <p className="text-sm text-muted-foreground">Đơn hàng tối thiểu: {product.min_order} {product.unit}</p>
+                <div className="flex items-center mt-2">
+                  <Truck className="h-4 w-4 mr-1" />
+                  <span className="text-sm"> <span className="text-green-500">3 đến 5 ngày</span> {product.delivery_time}</span>
+                </div>
+                {product.promotion && (
+                  <div className="mt-2 p-2 bg-yellow-100 rounded-md">
+                    <p className="text-sm text-yellow-800">{product.promotion}</p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                  <Button className="flex-grow mr-2" onClick={() => addToCart(product)}>
+                  <ShoppingCart className="mr-2 h-4 w-4" /> Thêm vào giỏ
+                </Button>
+              </CardFooter>
+            </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[
-          { name: 'Nước giải khát ABC', price: '120.000 ₫', unit: 'Thùng', minOrder: 10 },
-          { name: 'Bánh kẹo XYZ', price: '85.000 ₫', unit: 'Hộp', minOrder: 20 },
-          { name: 'Dầu ăn DEF', price: '210.000 ₫', unit: 'Thùng', minOrder: 5 },
-          { name: 'Mì ăn liền GHI', price: '95.000 ₫', unit: 'Thùng', minOrder: 15 }
-        ].map((product, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="aspect-square relative mb-4">
-                <Image
-                  width={500}
-                  height={500}
-                  src={`/react.png?text=${product.name}`}
-                  alt={product.name}
-                  className="object-cover w-full h-full rounded-md"
-                />
-                <Badge className="absolute top-2 right-2" variant="secondary">Đề xuất</Badge>
+        <section className="mb-16">
+          <Card className="bg-gray-100 border-0">
+            <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between">
+              <div className="mb-6 md:mb-0 md:mr-8 text-center md:text-left">
+                <h2 className="text-2xl font-bold mb-4">Đăng ký nhận thông tin</h2>
+                <p className="text-gray-600 mb-4">Nhận các ưu đãi độc quyền và cập nhật mới nhất về sản phẩm</p>
               </div>
-              <h3 className="font-semibold mb-2">{product.name}</h3>
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-bold">{product.price}</span>
-                <span className="text-sm text-muted-foreground">/{product.unit}</span>
+              <div className="flex w-full md:w-auto">
+                <Input type="email" placeholder="Nhập email của bạn" className="rounded-r-none" />
+                <Button className="rounded-l-none bg-black text-white hover:bg-gray-800 shadow-md">
+                  Đăng ký
+                </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">Đơn hàng tối thiểu: {product.minOrder} {product.unit}</p>
-              
-              <Button className="w-full">Thêm vào giỏ hàng</Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </section>
+      </main>
+
+     
     </div>
   )
 }

@@ -15,7 +15,8 @@ import {
   } from "@/components/ui/select"
 import useAPI, { mutateAPI } from '@/services/handleAPI';
 import { Category } from '@/app/types';
-
+import { storage } from '@/services/firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
   
   
 const CreateProduct = () => {
@@ -59,9 +60,24 @@ const CreateProduct = () => {
         displaySetter(formattedValue);
         setter(value.replace(/[^0-9]/g, '')); // Keep only numeric values
     };
+    const handleImageUpload = async (file: File) => {
+        const storageRef = ref(storage, `images/${file.name}`);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+      };
 
     const handleCreateProduct = async () => {
+        setAlertType('info');
+        setAlertMessage('Đang xử lý...');
+        setOpen(true);
         try {
+            const fileInput = document.getElementById('imageInput') as HTMLInputElement;
+            const file = fileInput?.files?.[0];
+            let imageUrl = '';
+      
+            if (file) {
+              imageUrl = await handleImageUpload(file);
+            }
           const data = {
             name,
             description,
@@ -71,6 +87,7 @@ const CreateProduct = () => {
             import_price: Number(import_price),
             quantity_in_stock: Number(quantity_in_stock),
             reorder_level: reorder_level ? Number(reorder_level) : undefined,
+            image: imageUrl,
           };
     
          await mutateAPI('/product/create', data, 'post');
@@ -223,6 +240,15 @@ const CreateProduct = () => {
                             className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+                    <div>
+                        <Label htmlFor="imageInput" className="block text-sm font-medium text-gray-600">Hình ảnh sản phẩm</Label>
+                        <Input
+                            id="imageInput"
+                            type="file"
+                            accept="image/*"
+                            className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -238,7 +264,7 @@ const CreateProduct = () => {
             <AlertDialog open={open} onOpenChange={setOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{alertType === 'success' ? 'Thành công' : 'Lỗi'}</AlertDialogTitle>
+                        <AlertDialogTitle>{alertType === 'success' ? 'Thành công' : 'Thông báo'}</AlertDialogTitle>
                     </AlertDialogHeader>
                     <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
                     <AlertDialogFooter>

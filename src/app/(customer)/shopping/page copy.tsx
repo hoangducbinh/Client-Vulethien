@@ -44,11 +44,13 @@ export default function CartPage() {
   const router = useRouter()
   const { customer } = useAuthStore(state => ({ customer: state.customer }))
 
+
   useEffect(() => {
     const storedCart = localStorage.getItem('cart')
     if (storedCart) {
       setCart(JSON.parse(storedCart))
     }
+    // Nếu có thông tin khách hàng, điền vào form
     if (customer) {
       setCustomerInfo({
         name: customer.name || '',
@@ -80,33 +82,22 @@ export default function CartPage() {
   const removeItem = (id: string) => {
     const newCart = cart.filter(item => item.id !== id)
     updateCart(newCart)
-    toast.success('Đã xóa sản phẩm khỏi giỏ hàng', {
-      position: 'top-right',
-      autoClose: 1000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-    })
+    toast.success('Đã xóa sản phẩm khỏi giỏ hàng')
   }
 
   const applyCoupon = () => {
+    // Giả lập kiểm tra mã giảm giá
     if (couponCode === 'DISCOUNT10') {
       setDiscount(10)
-      toast.success('Áp dụng mã giảm giá thành công', {
-        position: 'top-right',
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      })
+      toast.success('Áp dụng mã giảm giá thành công')
     } else {
       toast.error('Mã giảm giá không hợp lệ')
     }
   }
+
+  
+
+
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shippingFee = subtotal > 500000 ? 0 : 30000
@@ -125,6 +116,7 @@ export default function CartPage() {
       return
     }
 
+    // Kiểm tra thông tin khách hàng
     if (!customerInfo.phone || !customerInfo.address) {
       toast.error('Vui lòng điền đầy đủ số điện thoại và địa chỉ')
       return
@@ -142,6 +134,7 @@ export default function CartPage() {
         })),
       }
 
+      console.log(orderData)
       const response = await mutateAPI('/order/create', orderData, 'post')
       
       if (response.message === "Tạo đơn hàng mới thành công") {
@@ -159,83 +152,83 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6 text-center">Giỏ hàng của bạn</h1>
+    <div className="container mx-auto px-4 py-8">
       <ToastContainer />
+      <h1 className="text-3xl font-bold mb-6">Giỏ hàng của bạn</h1>
       {cart.length === 0 ? (
         <Card className="text-center p-8">
           <CardContent className="flex flex-col items-center">
-            <ShoppingBag className="w-16 h-16 text-gray-500 mb-4" />
+            <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
             <p className="text-xl font-semibold mb-2">Giỏ hàng của bạn đang trống</p>
-            <p className="text-gray-400 mb-4">Hãy thêm một số sản phẩm và quay lại đây nhé!</p>
-            <Button onClick={() => router.push('/allproducts')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <p className="text-muted-foreground mb-4">Hãy thêm một số sản phẩm và quay lại đây nhé!</p>
+            <Button onClick={() => router.push('/allproducts')}>
               Tiếp tục mua sắm
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col lg:flex-row lg:space-x-8">
-          <div className="flex-grow lg:w-2/3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
             {cart.map(item => (
-              <Card key={item.id} className="mb-4 overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-lg">
-                <CardContent className="p-4 flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                  <Image 
-                    src={item.image} 
-                    alt={item.name} 
-                    width={80} 
-                    height={80} 
-                    className="rounded-md object-contain" 
-                  />
-                  <div className="flex-grow text-center sm:text-left">
-                    <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <p className="text-gray-600">{item.price.toLocaleString()} ₫/{item.unit}</p>
-                    <Badge variant="outline" className="mt-1">Còn {item.stock} {item.unit}</Badge>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="bg-gray-200 hover:bg-gray-300"><Minus className="h-4 w-4" /></Button>
-                    <Input 
-                      type="number" 
-                      value={item.quantity} 
-                      onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
-                      className="w-16 text-center" 
-                    />
-                    <Button variant="outline" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="bg-gray-200 hover:bg-gray-300"><Plus className="h-4 w-4" /></Button>
-                  </div>
-                  <div className="text-center sm:text-right">
-                    <p className="font-semibold">{(item.price * item.quantity).toLocaleString()} ₫</p>
-                    <Button variant="ghost" onClick={() => removeItem(item.id)} className="text-destructive hover:text-destructive/90">
-                      <Trash2 className="h-4 w-4 mr-2" /> Xóa
-                    </Button>
+              <Card key={item.id} className="mb-4 overflow-hidden transition-shadow hover:shadow-md">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <Image src={`/react.png`} priority={true} alt={item.name} width={80} height={80} className=" w-auto h-auto rounded-md mr-4 object-cover" />
+                    <div className="flex-grow">
+                      <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                      <p className="text-muted-foreground">{item.price.toLocaleString()} ₫/{item.unit}</p>
+                      <Badge variant="secondary" className="mt-1">Còn {item.stock} {item.unit}</Badge>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" size="icon" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input 
+                        type="number" 
+                        value={item.quantity} 
+                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                        className="w-16 text-center" 
+                      />
+                      <Button variant="outline" size="icon" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="ml-4 text-right">
+                      <p className="font-semibold">{(item.price * item.quantity).toLocaleString()} ₫</p>
+                      <Button variant="ghost" size="sm" className="mt-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeItem(item.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Xóa
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-          <div className="lg:w-1/3 mt-8 lg:mt-0">
-            <Card className="sticky top-4 rounded-lg">
+          <div>
+            <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle className="text-xl font-bold">Tóm tắt đơn hàng</CardTitle>
+                <CardTitle>Tóm tắt đơn hàng</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Thông tin khách hàng</h3>
-                    <p className="mb-2">Họ tên: {customerInfo.name}</p>
-                    <Input
-                      placeholder="Số điện thoại"
-                      name="phone"
-                      value={customerInfo.phone}
-                      onChange={handleCustomerInfoChange}
-                      className="mb-2"
-                    />
-                    <Input
-                      placeholder="Địa chỉ"
-                      name="address"
-                      value={customerInfo.address}
-                      onChange={handleCustomerInfoChange}
-                      className="mb-2"
-                    />
-                  </div>
+              <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Thông tin khách hàng</h3>
+                <p className="mb-2">Họ tên: {customerInfo.name}</p>
+                <Input
+                  placeholder="Số điện thoại"
+                  name="phone"
+                  value={customerInfo.phone}
+                  onChange={handleCustomerInfoChange}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Địa chỉ"
+                  name="address"
+                  value={customerInfo.address}
+                  onChange={handleCustomerInfoChange}
+                  className="mb-2"
+                />
+              </div>
                   <Separator />
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -260,17 +253,15 @@ export default function CartPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="flex space-x-2">
-                    <Input 
-                      placeholder="Nhập mã giảm giá" 
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-grow"
-                    />
-                    <Button onClick={applyCoupon} variant="outline" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                      Áp dụng
-                    </Button>
-                  </div>
+                  <Input 
+                    placeholder="Nhập mã giảm giá" 
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Button onClick={applyCoupon} variant="outline" className="w-full">
+                    Áp dụng
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>
@@ -283,7 +274,7 @@ export default function CartPage() {
         </div>
       )}
       <div className="mt-8">
-        <Button variant="outline" onClick={() => router.push('/allproducts')} className="flex items-center bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button variant="outline" onClick={() => router.push('/allproducts')} className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Tiếp tục mua sắm
         </Button>
       </div>

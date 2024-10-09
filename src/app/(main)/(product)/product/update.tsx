@@ -10,6 +10,9 @@ import { Edit, Save, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { storage } from '@/services/firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Image from 'next/image';
 
 interface UpdateProductProps {
   product: any;
@@ -39,19 +42,33 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
     setFormData((prev: typeof product) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageUpload = async (file: File) => {
+    const storageRef = ref(storage, `images/${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await mutateAPI(`/product/update/${product._id}`, formData, 'put');
+      const fileInput = document.getElementById('imageInput') as HTMLInputElement;
+      const file = fileInput?.files?.[0];
+      let imageUrl = formData.image; // Giữ URL cũ nếu không có hinh ảnh mới
+  
+      if (file) {
+        imageUrl = await handleImageUpload(file);
+      }
+  
+      const updatedData = {
+        ...formData,
+        image: imageUrl, // Cập nhật URL hình ảnh
+      };
+  
+      const response = await mutateAPI(`/product/update/${product._id}`, updatedData, 'put');
       onUpdate();
       setIsEditing(false);
-      if (response.status === 200) {
         setAlertType('success');
         setAlertMessage('Cập nhật sản phẩm thành công');
-      } else {
-        setAlertType('error');
-        setAlertMessage('Cập nhật sản phẩm thất bại');
-      }
     } catch (error) {
       console.error('Error updating product:', error);
       setAlertType('error');
@@ -78,7 +95,7 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>{isEditing ? 'Chỉnh sửa sản phẩm' : 'Thông tin sản phẩm'}</span>
@@ -103,8 +120,8 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
         </AlertDialog>
 
         {isEditing ? (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <form onSubmit={handleUpdateProduct} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="name">Tên sản phẩm</Label>
                 <Input id="name" name="name" value={formData.name} onChange={handleChange} />
@@ -138,7 +155,7 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
                     <SelectValue placeholder="Chọn đơn vị tính" />
                   </SelectTrigger>
                   <SelectContent>
-                    {['kg', 'Chai', 'Bành', 'Hộp', 'Lọ', 'Thùng', 'Gói', 'Cái', 'Bộ', 'Dây'].map((unit) => (
+                    {['Ký', 'Chai', 'Bành', 'Hộp', 'Lọ', 'Thùng', 'Gói', 'Cái', 'Bộ', 'Dây, Bịch, Bọc, Lon, Lạng'].map((unit) => (
                       <SelectItem key={unit} value={unit}>{unit}</SelectItem>
                     ))}
                   </SelectContent>
@@ -166,7 +183,11 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Mô tả</Label>
-              <Textarea rows={4} id="description" name="description" value={formData.description} onChange={handleChange} />
+              <Textarea rows={3} id="description" name="description" value={formData.description} onChange={handleChange} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageInput">Ảnh sản phẩm</Label>
+              <Input id="imageInput" name="image" type="file" accept="image/*" />
             </div>
             <div className="flex justify-end space-x-2 mt-6">
               <Button type="submit" variant="default" className="flex items-center">
@@ -178,8 +199,8 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
             </div>
           </form>
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label className="font-medium">Tên sản phẩm</Label>
                 <p>{product.name}</p>
@@ -211,7 +232,19 @@ const UpdateProduct: React.FC<UpdateProductProps> = ({ product, onUpdate }) => {
             </div>
             <div>
               <Label className="font-medium">Mô tả</Label>
-              <p className="mt-1">{product.description}</p>
+              <p className="mt-1 text-sm text-gray-600">{product.description}</p>
+            </div>
+            <div>
+              <Label className="font-medium">Ảnh sản phẩm</Label>
+              <div className="mt-2 w-full h-64 relative">
+                <Image 
+                  src={product.image} 
+                  alt={product.name} 
+                  className=" object-contain rounded-lg w-full h-48"
+                  width={200}
+                  height={200}
+                />
+              </div>
             </div>
           </div>
         )}

@@ -209,7 +209,7 @@ const ProductPage = () => {
                             Chi tiết
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-4xl">
                           <DialogHeader>
                             <DialogTitle>Thông tin chi tiết sản phẩm</DialogTitle>
                             <DialogDescription></DialogDescription>

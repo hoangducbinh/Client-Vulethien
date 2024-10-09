@@ -1,6 +1,7 @@
+
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,29 +25,31 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import useAPI from '@/services/handleAPI'
+import { useRouter } from 'next/navigation'
 
 export default function AllOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateRange, setDateRange] = useState({ from: null, to: null })
   const [currentPage, setCurrentPage] = useState(1)
+  const [limit, setLimit] = useState(10)
 
-  // Mock data for orders
-  const orders = [
-    { id: 'DH-1234', date: '2023-06-15', total: '15.500.000 ₫', status: 'Đang xử lý', items: 5 },
-    { id: 'DH-1233', date: '2023-06-10', total: '22.300.000 ₫', status: 'Đã giao', items: 8 },
-    { id: 'DH-1232', date: '2023-06-05', total: '18.430.000 ₫', status: 'Đang vận chuyển', items: 6 },
-    { id: 'DH-1231', date: '2023-06-01', total: '9.800.000 ₫', status: 'Đã hủy', items: 3 },
-    { id: 'DH-1230', date: '2023-05-28', total: '31.200.000 ₫', status: 'Đã giao', items: 12 },
-  ]
+  const router = useRouter()
 
-  const filteredOrders = orders.filter(order => 
-    (order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     order.status.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (statusFilter === 'all' || order.status === statusFilter) &&
-    (!dateRange.from || new Date(order.date) >= new Date(dateRange.from)) &&
-    (!dateRange.to || new Date(order.date) <= new Date(dateRange.to))
-  )
+  const handleOrderDetail = (orderId: string) => {
+    router.push(`/orderdetail/${orderId}`)
+  }
+
+  const { data, isLoading, isError } = useAPI('/order/getAll', 'get', {
+    page: currentPage,
+    limit: limit,
+    search: searchQuery,
+    status: statusFilter !== 'all' ? statusFilter : '',
+    // Add date range parameters if needed
+  })
+  const orders = data?.data?.orders || []
+  const totalPages = data?.data?.totalPages || 1
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -122,40 +125,46 @@ export default function AllOrders() {
       
       <Card>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã đơn hàng</TableHead>
-                <TableHead>Ngày đặt</TableHead>
-                <TableHead>Số lượng</TableHead>
-                <TableHead>Tổng tiền</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.date}</TableCell>
-                  <TableCell>{order.items} sản phẩm</TableCell>
-                  <TableCell>{order.total}</TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      order.status === 'Đã giao' ? 'success' :
-                      order.status === 'Đang vận chuyển' ? 'warning' :
-                      order.status === 'Đã hủy' ? 'destructive' : 'default'
-                    }>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">Chi tiết</Button>
-                  </TableCell>
+          {isLoading ? (
+            <p>Đang tải...</p>
+          ) : isError ? (
+            <p>Có lỗi xảy ra khi tải dữ liệu</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã đơn hàng</TableHead>
+                  <TableHead>Ngày đặt</TableHead>
+                  <TableHead>Khách hàng</TableHead>
+                  <TableHead>Tổng tiền</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order: any) => (
+                  <TableRow key={order._id}>
+                    <TableCell className="font-medium">{order._id}</TableCell>
+                    <TableCell>{new Date(order.date_ordered).toLocaleDateString('vi-VN')}</TableCell>
+                    <TableCell>{order.customer_id.name}</TableCell>
+                    <TableCell>{order.total_value.toLocaleString('vi-VN')} ₫</TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        order.status === 'Đã giao' ? 'success' :
+                        order.status === 'Đang vận chuyển' ? 'warning' :
+                        order.status === 'Đã hủy' ? 'destructive' : 'default'
+                      }>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => handleOrderDetail(order._id)}>Chi tiết</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -163,24 +172,20 @@ export default function AllOrders() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious href="#" />
+              <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
             </PaginationItem>
+            {[...Array(totalPages)].map((_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(index + 1)}
+                  isActive={currentPage === index + 1}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
             <PaginationItem>
-              <PaginationLink href="#">1</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#" isActive>
-                2
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">3</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext href="#" />
+              <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
             </PaginationItem>
           </PaginationContent>
         </Pagination>

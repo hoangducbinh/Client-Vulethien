@@ -38,12 +38,12 @@ import useAPI, { mutateAPI } from "@/services/handleAPI"
 import { toast } from "react-toastify"
 import { Card } from "@/components/ui/card";
 
-const orderStatuses = ["Mới", "Đã xác nhận", "Đang giao", "Đã giao", "Đã hủy"]
+const orderStatuses = ["Mới", "Đã xác nhận", "Đang giao hàng", "Đã giao", "Đã hủy"]
 
 const statusColors = {
   "Mới": "bg-blue-500",
   "Đã xác nhận": "bg-green-500",
-  "Đang giao": "bg-purple-500",
+  "Đang giao hàng": "bg-purple-500",
   "Đã giao": "bg-gray-500",
   "Đã hủy": "bg-red-500",
 }
@@ -259,7 +259,8 @@ export default function EnhancedOrderManagement() {
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Chi tiết đơn hàng #{selectedOrder._id}</DialogTitle>
+              <DialogTitle>Chi tiết đơn hàng</DialogTitle>
+              <DialogDescription>Mã đơn hàng: <span className="font-bold">#{selectedOrder._id}</span></DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
