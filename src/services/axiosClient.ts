@@ -4,7 +4,9 @@ import queryString from "query-string";
 
 
 //const baseURL = `http://localhost:8000/`
-const baseURL = `http://192.168.1.7:8000/`
+//https://servervulethien.vercel.app/
+//const baseURL = `http://192.168.1.7:8000/`
+const baseURL = `https://servervulethien.vercel.app/`
 
 const axiosClient = axios.create(
     {
