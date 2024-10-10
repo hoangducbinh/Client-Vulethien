@@ -133,7 +133,7 @@ export default function CartPage() {
     try {
       const orderData = {
         customer_id: customer._id,
-        status: 'Đang xử lý',
+        status: 'Chờ xác nhận',
         total_value: total,
         orderDetails: cart.map(item => ({
           product_id: item.id,

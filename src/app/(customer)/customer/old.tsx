@@ -28,9 +28,9 @@ export default function Component() {
   const router = useRouter()
 
   const heroImages = [
-    '/hero1.jpg',
-    '/hero2.jpg',
-    '/hero3.jpg',
+    '/demo.jpg',
+    '/demo.jpg',
+    '/demo.jpg',
   ]
 
   const featuredProducts = [

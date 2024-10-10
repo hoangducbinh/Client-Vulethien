@@ -35,16 +35,18 @@ import {
   ChevronRight,
 } from "lucide-react"
 import useAPI, { mutateAPI } from "@/services/handleAPI"
-import { toast } from "react-toastify"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import { Card } from "@/components/ui/card";
+import Image from "next/image"
 
-const orderStatuses = ["Mới", "Đã xác nhận", "Đang giao hàng", "Đã giao", "Đã hủy"]
+const orderStatuses = ["Chờ xác nhận", "Đã xác nhận", "Đang giao hàng", "Đã giao hàng", "Đã hủy"]
 
 const statusColors = {
-  "Mới": "bg-blue-500",
+  "Chờ xác nhận": "bg-gray-500",
   "Đã xác nhận": "bg-green-500",
   "Đang giao hàng": "bg-purple-500",
-  "Đã giao": "bg-gray-500",
+  "Đã giao hàng": "bg-green-500",
   "Đã hủy": "bg-red-500",
 }
 
@@ -120,6 +122,7 @@ export default function EnhancedOrderManagement() {
 
   return (
     <div className="container mx-auto p-4">
+      <ToastContainer />
       <h1 className="text-4xl font-bold mb-6 text-center">Quản lý đơn đặt hàng</h1>
       <Card className="shadow-lg rounded-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
@@ -208,7 +211,7 @@ export default function EnhancedOrderManagement() {
                           onValueChange={(value) => handleStatusChange(order._id, value)}
                         >
                           <SelectTrigger className="w-[140px] border rounded-lg shadow-sm">
-                            <SelectValue placeholder="Cập nhật" />
+                            <SelectValue placeholder="Mới" />
                           </SelectTrigger>
                           <SelectContent>
                             {orderStatuses.map(status => (
@@ -257,46 +260,68 @@ export default function EnhancedOrderManagement() {
 
       {selectedOrder && (
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[1000px] w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Chi tiết đơn hàng</DialogTitle>
-              <DialogDescription>Mã đơn hàng: <span className="font-bold">#{selectedOrder._id}</span></DialogDescription>
+              <DialogTitle className="text-3xl font-bold">Chi tiết đơn hàng</DialogTitle>
+              <DialogDescription>#{selectedOrder._id}</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div>
-                <h4 className="font-semibold">Khách hàng:</h4>
-                <p>{selectedOrder.customer_id?.name || 'N/A'}</p>
+            <div className="mt-6 space-y-8">
+              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-500">Khách hàng</p>
+                  <p className="text-lg font-semibold">{selectedOrder.customer_id?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Số điện thoại</p>
+                  <p className="text-lg font-semibold">{selectedOrder.customer_id?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Ngày đặt hàng</p>
+                  <p className="text-lg font-semibold">{new Date(selectedOrder.date_ordered).toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Trạng thái</p>
+                  <Badge className={`${statusColors[selectedOrder.status as keyof typeof statusColors]} text-white px-3 py-1 text-sm`}>
+                    {selectedOrder.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Ngày giao hàng</p>
+                  <p className="text-lg font-semibold">{selectedOrder.delivery_date ? new Date(selectedOrder.delivery_date).toLocaleDateString('vi-VN') : 'Đang cập nhật'}</p>
+                </div>
               </div>
+
               <div>
-                <h4 className="font-semibold">Ngày đặt hàng:</h4>
-                <p>{new Date(selectedOrder.date_ordered).toLocaleString('vi-VN')}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Trạng thái:</h4>
-                <Badge className={`${statusColors[selectedOrder.status as keyof typeof statusColors]} text-white`}>
-                  {selectedOrder.status}
-                </Badge>
-              </div>
-              <div>
-                <h4 className="font-semibold">Tổng tiền:</h4>
-                <p>{selectedOrder.total_value.toLocaleString()} VNĐ</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Sản phẩm:</h4>
+                <h4 className="text-xl font-semibold mb-4">Sản phẩm</h4>
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                  <ul className="list-disc list-inside">
-                    {selectedOrder.items.map((item: any, index: any) => (
-                      <li key={index}>
-                        {item.product_id.name} - Số lượng: {item.quantity} - Giá: {item.price.toLocaleString()} VNĐ
-                      </li>
+                  <div className="space-y-4">
+                    {selectedOrder.items.map((item: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center border-b pb-4">
+                        <div className="flex items-center">
+                          <Image src={item.product_id.image} alt={item.product_id.name} width={50} height={50} className="mr-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">{item.product_id.name}</p>
+                            <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{(item.quantity * item.price).toLocaleString()} VNĐ</p>
+                          <p className="text-sm text-gray-500">{item.price.toLocaleString()} VNĐ / sản phẩm</p>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
-                  <p>Không có thông tin sản phẩm</p>
+                  <p className="text-gray-500">Không có thông tin sản phẩm</p>
                 )}
               </div>
+
+              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg">
+                <p className="text-xl font-semibold">Tổng cộng</p>
+                <p className="text-2xl font-bold">{selectedOrder.total_value.toLocaleString()} VNĐ</p>
+              </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-8">
               <Button variant="outline" onClick={() => setSelectedOrder(null)}>Đóng</Button>
             </DialogFooter>
           </DialogContent>

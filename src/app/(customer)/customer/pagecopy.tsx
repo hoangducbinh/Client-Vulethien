@@ -388,7 +388,7 @@ export default function Component() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-muted-foreground italic">"{review.comment}"</p>
+                    <p className="text-muted-foreground italic">{review.comment}</p>
                   </CardContent>
                 </Card>
               </motion.div>

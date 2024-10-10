@@ -38,18 +38,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <aside className={`bg-gray-100 rounded-lg w-64 min-h-screen ${sidebarOpen ? 'block' : 'hidden'} md:block`}>
         <div className="flex items-center h-16 px-4">
           <ShoppingCart className="h-6 w-6 mr-2 text-blue-600" />
-          <span className="text-xl font-semibold">Code toàn bug</span>
+          <span className="text-xl font-semibold">Admin</span>
         </div>
         <nav className="p-4 space-y-2">
           <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <BarChart2 className="mr-2 h-4 w-4" />
             Dashboard
           </Link>
-          <Link href="/customer" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/customer-manager" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <Users className="mr-2 h-4 w-4" />
             Khách hàng
           </Link>
-          <Link href="/home" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/employee-manager" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <Users className="mr-2 h-4 w-4" />
             Nhân viên
           </Link>
@@ -65,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ArrowDown className="mr-2 h-4 w-4" />
             Nhập hàng
           </Link>
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/export" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <Truck className="mr-2 h-4 w-4" />
             Xuất hàng
           </Link>

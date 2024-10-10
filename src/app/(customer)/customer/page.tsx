@@ -94,7 +94,7 @@ export default function Component() {
                 <CardTitle className="mb-2">{product.name}</CardTitle>
                 <div className="flex items-center mb-2">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    <Star key={i} className={`h-4 w-4 ${i < Math.floor( 5 ) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
                   ))}
                   <span className="ml-2 text-sm text-gray-600">{product.rating}</span>
                 </div>

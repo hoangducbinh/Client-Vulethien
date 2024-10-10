@@ -29,10 +29,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CreateCategory from '../category/create';
 import CreateProduct from './create';
 import UpdateProduct from "./update";
 import useAPI from '@/services/handleAPI';
+import CreateCategory from '../category/page';
 
 const ProductPage = () => {
   const [categories, setCategories] = useState<any[]>([]);

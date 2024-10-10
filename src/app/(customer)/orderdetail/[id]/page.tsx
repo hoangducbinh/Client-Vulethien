@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import Image from 'next/image'
-import { CalendarIcon, PackageIcon, PrinterIcon, TruckIcon, UserIcon } from 'lucide-react'
+import { CalendarIcon, PackageIcon, PhoneIcon, PrinterIcon, TruckIcon, UserIcon } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 
 const OrderStatus = ({ status }: { status: string }) => {
-  const statuses = ['Đang xử lý', 'Đã xác nhận', 'Đang giao hàng', 'Đã giao hàng']
+  const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao hàng', 'Đã giao hàng']
   const currentIndex = statuses.indexOf(status)
 
   return (
@@ -116,6 +116,13 @@ const OrderDetail = ({ params }: { params: { id: string } }) => {
                   <div>
                     <p className="text-sm text-muted-foreground">Địa chỉ giao hàng</p>
                     <p className="font-medium break-words">{order.customer_id.address}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <PhoneIcon className="mr-2 h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Số điện thoại</p>
+                    <p className="font-medium">{order.customer_id.phone}</p>
                   </div>
                 </div>
               </CardContent>
