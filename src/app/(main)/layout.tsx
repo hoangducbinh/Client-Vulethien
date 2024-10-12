@@ -23,6 +23,8 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/store';
+import { Toaster } from "@/components/ui/toaster"
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const router = useRouter();
@@ -132,6 +134,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className='overflow-y-auto p-2'>
           <div>
             {children}
+            <Toaster />
           </div>
         </main>
       </div>

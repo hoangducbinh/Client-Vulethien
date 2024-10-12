@@ -1,289 +1,414 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from 'react'
+import { Search, Filter, Download, ChevronDown, Loader2, X, Check, Truck } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Search, ChevronLeft, ChevronRight, FileText, Trash2, Calendar, User, Package } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
-interface InventoryOutbound {
-  id: string
-  date: string
-  recipient: string
-  status: "Pending" | "Completed" | "Cancelled"
-  totalItems: number
-  totalValue: number
-}
-
-interface InventoryItem {
-  id: string
+type Product = {
+  id: number
   name: string
   quantity: number
-  unitPrice: number
+  prepared: boolean
 }
 
-export default function InventoryOutboundManagement() {
-  const [outbounds, setOutbounds] = useState<InventoryOutbound[]>([
-    { id: "OUT001", date: "2024-03-10", recipient: "Công ty A", status: "Completed", totalItems: 50, totalValue: 5000000 },
-    { id: "OUT002", date: "2024-03-11", recipient: "Cửa hàng B", status: "Pending", totalItems: 30, totalValue: 3000000 },
-    { id: "OUT003", date: "2024-03-12", recipient: "Đại lý C", status: "Cancelled", totalItems: 20, totalValue: 2000000 },
-    { id: "OUT004", date: "2024-03-13", recipient: "Khách hàng D", status: "Completed", totalItems: 40, totalValue: 4000000 },
-    { id: "OUT005", date: "2024-03-14", recipient: "Công ty E", status: "Pending", totalItems: 60, totalValue: 6000000 },
-  ])
-  const [newOutbound, setNewOutbound] = useState<Omit<InventoryOutbound, "id" | "totalItems" | "totalValue">>({ date: "", recipient: "", status: "Pending" })
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [selectedOutbound, setSelectedOutbound] = useState<InventoryOutbound | null>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const outboundsPerPage = 5
+type ExportOrder = {
+  id: number
+  customerName: string
+  exportDate: string
+  status: 'pending' | 'preparing' | 'ready' | 'exported'
+  products: Product[]
+  warehouse: string
+  responsiblePerson: string
+}
 
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-    { id: "ITEM001", name: "Sản phẩm A", quantity: 100, unitPrice: 100000 },
-    { id: "ITEM002", name: "Sản phẩm B", quantity: 200, unitPrice: 50000 },
-    { id: "ITEM003", name: "Sản phẩm C", quantity: 150, unitPrice: 75000 },
-  ])
-  const [selectedItems, setSelectedItems] = useState<InventoryItem[]>([])
+function ExportOrderDetailsDialog({ exportOrder, onProductPreparedChange, onConfirmExport }: { 
+  exportOrder: ExportOrder; 
+  onProductPreparedChange: (orderId: number, productId: number, prepared: boolean) => void;
+  onConfirmExport: (orderId: number) => void;
+}) {
+  const allPrepared = exportOrder.products.every(product => product.prepared)
 
-  const filteredOutbounds = outbounds.filter(outbound =>
-    outbound.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    outbound.recipient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    outbound.date.includes(searchTerm)
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost">Chi tiết</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Chi tiết phiếu xuất kho #{exportOrder.id}</DialogTitle>
+          <DialogDescription>
+            Xuất kho cho khách hàng {exportOrder.customerName}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Ngày xuất:</span>
+            <span className="col-span-3">{exportOrder.exportDate}</span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Kho xuất:</span>
+            <span className="col-span-3">{exportOrder.warehouse}</span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Người phụ trách:</span>
+            <span className="col-span-3">{exportOrder.responsiblePerson}</span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Trạng thái:</span>
+            <span className="col-span-3">
+              <ExportStatusBadge status={exportOrder.status} />
+            </span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium col-span-4">Sản phẩm:</span>
+            <ul className="list-none pl-0 col-span-4 space-y-2">
+              {exportOrder.products.map((product) => (
+                <li key={product.id} className="flex items-center justify-between">
+                  <span>{product.name} x{product.quantity}</span>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`product-${product.id}`}
+                      checked={product.prepared}
+                      onCheckedChange={(checked) => onProductPreparedChange(exportOrder.id, product.id, checked as boolean)}
+                    />
+                    <label
+                      htmlFor={`product-${product.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Đã chuẩn bị
+                    </label>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button 
+            onClick={() => onConfirmExport(exportOrder.id)} 
+            disabled={!allPrepared || exportOrder.status === 'exported'}
+          >
+            {exportOrder.status === 'exported' ? 'Đã xuất kho' : 'Xác nhận xuất kho'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
+}
 
-  const indexOfLastOutbound = currentPage * outboundsPerPage
-  const indexOfFirstOutbound = indexOfLastOutbound - outboundsPerPage
-  const currentOutbounds = filteredOutbounds.slice(indexOfFirstOutbound, indexOfLastOutbound)
+function ExportStatusBadge({ status }: { status: ExportOrder['status'] }) {
+  const statusConfig = {
+    pending: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800' },
+    preparing: { label: 'Đang chuẩn bị', color: 'bg-blue-100 text-blue-800' },
+    ready: { label: 'Sẵn sàng xuất', color: 'bg-green-100 text-green-800' },
+    exported: { label: 'Đã xuất kho', color: 'bg-gray-100 text-gray-800' },
+  }
 
-  const totalPages = Math.ceil(filteredOutbounds.length / outboundsPerPage)
+  const { label, color } = statusConfig[status]
 
-  const handleAddOutbound = () => {
-    if (newOutbound.date && newOutbound.recipient && selectedItems.length > 0) {
-      const totalItems = selectedItems.reduce((sum, item) => sum + item.quantity, 0)
-      const totalValue = selectedItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-      const newId = `OUT${(outbounds.length + 1).toString().padStart(3, '0')}`
-      setOutbounds([...outbounds, { ...newOutbound, id: newId, totalItems, totalValue }])
-      setNewOutbound({ date: "", recipient: "", status: "Pending" })
-      setSelectedItems([])
-      setIsAddDialogOpen(false)
+  return (
+    <Badge className={`${color} font-medium`}>
+      {label}
+    </Badge>
+  )
+}
+
+export default function QuanLyXuatKho() {
+  const [exportOrders, setExportOrders] = useState<ExportOrder[]>([])
+  const [filteredExportOrders, setFilteredExportOrders] = useState<ExportOrder[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const ordersPerPage = 10
+
+
+  const { toast } = useToast()
+  useEffect(() => {
+    const fetchExportOrders = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        // Simulating API call
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        const mockExportOrders: ExportOrder[] = Array.from({ length: 50 }, (_, index) => ({
+          id: index + 1,
+          customerName: `Khách hàng ${index + 1}`,
+          exportDate: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString().split('T')[0],
+          status: ['pending', 'preparing', 'ready', 'exported'][Math.floor(Math.random() * 4)] as ExportOrder['status'],
+          products: Array.from({ length: Math.floor(Math.random() * 5) + 1 }, (_, prodIndex) => ({
+            id: prodIndex + 1,
+            name: `Sản phẩm ${prodIndex + 1}`,
+            quantity: Math.floor(Math.random() * 5) + 1,
+            prepared: Math.random() > 0.5
+          })),
+          warehouse: ['Kho A', 'Kho B', 'Kho C'][Math.floor(Math.random() * 3)],
+          responsiblePerson: ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'][Math.floor(Math.random() * 3)]
+        }))
+        setExportOrders(mockExportOrders)
+        setFilteredExportOrders(mockExportOrders)
+      } catch (err) {
+        setError('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.')
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    fetchExportOrders()
+  }, [])
+
+  const handleSearch = () => {
+    const filtered = exportOrders.filter(order => 
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toString().includes(searchTerm)
+    )
+    setFilteredExportOrders(filtered)
+    setCurrentPage(1)
   }
 
-  const handleDeleteOutbound = (outboundId: string) => {
-    setOutbounds(outbounds.filter(outbound => outbound.id !== outboundId))
+  const handleFilter = (status: string) => {
+    setStatusFilter(status)
+    const filtered = status === 'all' 
+      ? exportOrders 
+      : exportOrders.filter(order => order.status === status)
+    setFilteredExportOrders(filtered)
+    setCurrentPage(1)
   }
 
-  const handleViewDetails = (outbound: InventoryOutbound) => {
-    setSelectedOutbound(outbound)
-    setIsDetailDialogOpen(true)
+  const handleProductPreparedChange = (orderId: number, productId: number, prepared: boolean) => {
+    setExportOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId
+          ? {
+              ...order,
+              products: order.products.map(product =>
+                product.id === productId ? { ...product, prepared } : product
+              ),
+              status: order.products.every(p => p.id === productId ? prepared : p.prepared) ? 'ready' : 'preparing'
+            }
+          : order
+      )
+    )
+    setFilteredExportOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId
+          ? {
+              ...order,
+              products: order.products.map(product =>
+                product.id === productId ? { ...product, prepared } : product
+              ),
+              status: order.products.every(p => p.id === productId ? prepared : p.prepared) ? 'ready' : 'preparing'
+            }
+          : order
+      )
+    )
+    toast({
+      title: prepared ? "Sản phẩm đã chuẩn bị" : "Sản phẩm chưa chuẩn bị",
+      description: `Sản phẩm #${productId} trong phiếu xuất kho #${orderId} đã được cập nhật.`,
+    })
   }
 
-  const handleAddItem = (item: InventoryItem) => {
-    const existingItem = selectedItems.find(i => i.id === item.id)
-    if (existingItem) {
-      setSelectedItems(selectedItems.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
-    } else {
-      setSelectedItems([...selectedItems, { ...item, quantity: 1 }])
-    }
+  const handleConfirmExport = (orderId: number) => {
+    setExportOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: 'exported' } : order
+      )
+    )
+    setFilteredExportOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: 'exported' } : order
+      )
+    )
+    toast({
+      title: "Xuất kho thành công",
+      description: `Phiếu xuất kho #${orderId} đã được xác nhận xuất kho.`,
+    })
   }
 
-  const handleRemoveItem = (itemId: string) => {
-    setSelectedItems(selectedItems.filter(item => item.id !== itemId))
+  const handleExport = () => {
+    // Implement export logic here
+    toast({
+      title: "Xuất dữ liệu",
+      description: "Dữ liệu xuất kho đã được xuất thành công.",
+    })
+  }
+
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentExportOrders = filteredExportOrders.slice(indexOfFirstOrder, indexOfLastOrder)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 space-y-4">
+        <Skeleton className="h-8 w-[200px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card className="bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-red-800">
+              <X className="h-6 w-6" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Quản lý xuất kho</CardTitle>
-          <CardDescription>Xem và quản lý các phiếu xuất kho</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
+    <div className="container mx-auto p-4">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold mb-4 md:mb-0">Quản lý Xuất Kho</h1>
+        <Button onClick={handleExport} className="w-full md:w-auto">
+          <Download className="mr-2 h-4 w-4" /> Xuất dữ liệu
+        </Button>
+      </div>
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
               <Input
-                placeholder="Tìm kiếm phiếu xuất kho..."
+                type="text"
+                placeholder="Tìm kiếm theo tên khách hàng hoặc mã phiếu xuất"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="w-full"
               />
-              <Button variant="outline" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Tạo phiếu xuất kho</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Tạo phiếu xuất kho mới</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">Ngày xuất</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={newOutbound.date}
-                      onChange={(e) => setNewOutbound({ ...newOutbound, date: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="recipient" className="text-right">Người nhận</Label>
-                    <Input
-                      id="recipient"
-                      value={newOutbound.recipient}
-                      onChange={(e) => setNewOutbound({ ...newOutbound, recipient: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right">Trạng thái</Label>
-                    <Select onValueChange={(value) => setNewOutbound({ ...newOutbound, status: value as "Pending" | "Completed" | "Cancelled" })}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">Đang chờ</SelectItem>
-                        <SelectItem value="Completed">Hoàn thành</SelectItem>
-                        <SelectItem value="Cancelled">Đã hủy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Sản phẩm</Label>
-                    <div className="col-span-3 space-y-2">
-                      {inventoryItems.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center">
-                          <span>{item.name}</span>
-                          <Button variant="outline" size="sm" onClick={() => handleAddItem(item)}>Thêm</Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Đã chọn</Label>
-                    <div className="col-span-3 space-y-2">
-                      {selectedItems.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center">
-                          <span>{item.name} (x{item.quantity})</span>
-                          <Button variant="outline" size="sm" onClick={() => handleRemoveItem(item.id)}>Xóa</Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <Button onClick={handleAddOutbound}>Tạo phiếu xuất kho</Button>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={handleSearch} className="w-full md:w-auto">
+              <Search className="mr-2 h-4 w-4" /> Tìm kiếm
+            </Button>
+            <Select  value={statusFilter} onValueChange={handleFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Lọc theo trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="pending">Chờ xử lý</SelectItem>
+                <SelectItem value="preparing">Đang chuẩn bị</SelectItem>
+                <SelectItem value="ready">Sẵn sàng xuất</SelectItem>
+                <SelectItem value="exported">Đã xuất kho</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã phiếu</TableHead>
+                <TableHead>Mã phiếu xuất</TableHead>
+                <TableHead>Khách hàng</TableHead>
                 <TableHead>Ngày xuất</TableHead>
-                <TableHead>Người nhận</TableHead>
+                <TableHead>Kho xuất</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead>Tổng SP</TableHead>
-                <TableHead>Tổng giá trị</TableHead>
                 <TableHead>Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentOutbounds.map((outbound) => (
-                <TableRow key={outbound.id}>
-                  <TableCell className="font-medium">{outbound.id}</TableCell>
-                  <TableCell>{outbound.date}</TableCell>
-                  <TableCell>{outbound.recipient}</TableCell>
+              {currentExportOrders.map(order => (
+                <TableRow key={order.id}>
+                  <TableCell>#{order.id}</TableCell>
+                  <TableCell>{order.customerName}</TableCell>
+                  <TableCell>{order.exportDate}</TableCell>
+                  <TableCell>{order.warehouse}</TableCell>
                   <TableCell>
-                    <Badge variant={outbound.status === "Completed" ? "default" : outbound.status === "Pending" ? "secondary" : "destructive"}>
-                      {outbound.status}
-                    </Badge>
+                    <ExportStatusBadge status={order.status} />
                   </TableCell>
-                  <TableCell>{outbound.totalItems}</TableCell>
-                  <TableCell>{outbound.totalValue.toLocaleString()} đ</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(outbound)}>
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteOutbound(outbound.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <ChevronDown className="h-4 w-4" />
+                          <span className="sr-only">Mở menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleConfirmExport(order.id)}>
+                          <Truck className="mr-2 h-4 w-4" />
+                          Xác nhận xuất kho
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <ExportOrderDetailsDialog 
+                            exportOrder={order} 
+                            onProductPreparedChange={handleProductPreparedChange}
+                            onConfirmExport={handleConfirmExport}
+                          />
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-
-          <div className="flex items-center justify-between space-x-2 py-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Trước
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              Trang {currentPage} / {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              Sau
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
         </CardContent>
       </Card>
-
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Chi tiết phiếu xuất kho</DialogTitle>
-          </DialogHeader>
-          {selectedOutbound && (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>Ngày xuất: {selectedOutbound.date}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Người nhận: {selectedOutbound.recipient}</span>
-              
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant={selectedOutbound.status === "Completed" ? "default" : selectedOutbound.status === "Pending" ? "secondary" : "destructive"}>
-                  {selectedOutbound.status}
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Package className="h-4 w-4" />
-                <span>Tổng số sản phẩm: {selectedOutbound.totalItems}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold">Tổng giá trị: {selectedOutbound.totalValue.toLocaleString()} đ</span>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <div className="mt-4 flex justify-center">
+        <Button
+          variant="outline"
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="mr-2"
+        >
+          Trước
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => paginate(currentPage + 1)}
+          disabled={indexOfLastOrder >= filteredExportOrders.length}
+        >
+          Sau
+        </Button>
+      </div>
     </div>
   )
 }
