@@ -21,7 +21,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/home'); // Redirect to home if already authenticated
+      router.push('/admin'); // Redirect to home if already authenticated
     }
   }, [isAuthenticated, router]);
 
@@ -34,7 +34,7 @@ const LoginPage = () => {
       
       if (response && response.token) {
         setToken(response.token);
-        router.push('/home');
+        router.push('/admin');
       } else {
         setError('Đăng nhập thất bại, vui lòng thử lại.');
       }

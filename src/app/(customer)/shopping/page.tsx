@@ -92,8 +92,8 @@ export default function CartPage() {
   }
 
   const applyCoupon = () => {
-    if (couponCode === 'DISCOUNT10') {
-      setDiscount(10)
+    if (couponCode === 'GIAMGIA50') {
+      setDiscount(50)
       toast.success('Áp dụng mã giảm giá thành công', {
         position: 'top-right',
         autoClose: 1000,

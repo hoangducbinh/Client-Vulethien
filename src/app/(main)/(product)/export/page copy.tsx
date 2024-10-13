@@ -57,74 +57,81 @@ type ExportOrder = {
 }
 
 function ExportOrderDetailsDialog({ exportOrder, onProductPreparedChange, onConfirmExport }: { 
-  exportOrder: ExportOrder; 
+  exportOrder: ExportOrder | undefined; 
   onProductPreparedChange: (orderId: string, productId: number, prepared: boolean) => void;
   onConfirmExport: (orderId: string) => void;
 }) {
-
+  if (!exportOrder || !exportOrder.products) {
+    return null; // or a loading indicator
+  }
 
   const allPrepared = exportOrder.products.every(product => product.prepared);
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Chi tiết phiếu xuất kho #{exportOrder._id}</DialogTitle>
-        <DialogDescription>
-          Xuất kho cho khách hàng {exportOrder.customer_id.name}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <span className="font-medium">Ngày xuất:</span>
-          <span className="col-span-3">{exportOrder.date_ordered}</span>  
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost">Chi tiết</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Chi tiết phiếu xuất kho #{exportOrder._id}</DialogTitle>
+          <DialogDescription>
+            Xuất kho cho khách hàng {exportOrder.customer_id.name}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Ngày xuất:</span>
+            <span className="col-span-3">{exportOrder.date_ordered}</span>  
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Kho xuất:</span>
+            <span className="col-span-3">{exportOrder.warehouse}</span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Người phụ trách:</span>
+            <span className="col-span-3">{exportOrder.responsiblePerson}</span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium">Trạng thái:</span>
+            <span className="col-span-3">
+              <ExportStatusBadge status={exportOrder.status} />
+            </span>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="font-medium col-span-4">Sản phẩm:</span>
+            <ul className="list-none pl-0 col-span-4 space-y-2">
+              {exportOrder.products.map((product) => (
+                <li key={product.id} className="flex items-center justify-between">
+                  <span>{product.name} x{product.quantity}</span>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`product-${product.id}`}
+                      checked={product.prepared}
+                      onCheckedChange={(checked) => onProductPreparedChange(exportOrder._id, product.id, checked as boolean)}
+                    />
+                    <label
+                      htmlFor={`product-${product.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Đã chuẩn bị
+                    </label>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <span className="font-medium">Kho xuất:</span>
-          <span className="col-span-3">{exportOrder.warehouse}</span>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <span className="font-medium">Người phụ trách:</span>
-          <span className="col-span-3">{exportOrder.responsiblePerson}</span>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <span className="font-medium">Trạng thái:</span>
-          <span className="col-span-3">
-            <ExportStatusBadge status={exportOrder.status} />
-          </span>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <span className="font-medium col-span-4">Sản phẩm:</span>
-          <ul className="list-none pl-0 col-span-4 space-y-2">
-            {exportOrder.products.map((product) => (
-              <li key={product.id} className="flex items-center justify-between">
-                <span>{product.name} x{product.quantity}</span>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`product-${product.id}`}
-                    checked={product.prepared}
-                    onCheckedChange={(checked) => onProductPreparedChange(exportOrder._id, product.id, checked as boolean)}
-                  />
-                  <label
-                    htmlFor={`product-${product.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Đã chuẩn bị
-                  </label>  
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <DialogFooter>
-        <Button 
-          onClick={() => onConfirmExport(exportOrder._id)} 
-          disabled={!allPrepared || exportOrder.status === 'exported'}
-        >
-          {exportOrder.status === 'exported' ? 'Đã xuất kho' : 'Xác nhận xuất kho'}
-        </Button>
-      </DialogFooter>
-    </>
+        <DialogFooter>
+          <Button 
+            onClick={() => onConfirmExport(exportOrder.id)} 
+            disabled={!allPrepared || exportOrder.status === 'exported'}
+          >
+            {exportOrder.status === 'exported' ? 'Đã xuất kho' : 'Xác nhận xuất kho'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -172,12 +179,14 @@ export default function QuanLyXuatKho() {
     order: 'desc',
   });
 
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const { data: orderDetails, isLoading: isOrderDetailsLoading, isError: isOrderDetailsError } = useAPI(
-    selectedOrderId ? `/order/getOrderDetails/${selectedOrderId}` : '', 
-    'get'
+  const [selectedOrder, setSelectedOrder] = useState<ExportOrder | undefined>(undefined);
+  const { data: orderDetails, isLoading: isOrderDetailsLoading, isError: isOrderDetailsError } = useAPI(selectedOrder ? 
+    `/order/getOrderById/${selectedOrder._id}` : '', 'get'
   );
 
+  const handleOrderClick = (order: ExportOrder) => {
+    setSelectedOrder(order);
+  };
 
   console.log(exportOrders)
 
@@ -196,9 +205,9 @@ export default function QuanLyXuatKho() {
   }, [exportOrders])
 
   const handleSearch = () => {
-    const filtered = exportOrders.data.orders.filter((order: ExportOrder) => 
-      order.customer_id.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order._id.toString().includes(searchTerm)
+    const filtered = exportOrders.data.orders.filter(order => 
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toString().includes(searchTerm)
     )
     setFilteredExportOrders(filtered)
     setCurrentPage(1)
@@ -208,15 +217,15 @@ export default function QuanLyXuatKho() {
     setStatusFilter(status)
     const filtered = status === 'all' 
       ? exportOrders.data.orders 
-      : exportOrders.data.orders.filter((order: ExportOrder) => order.status === status)
+      : exportOrders.data.orders.filter(order => order.status === status)
     setFilteredExportOrders(filtered)
     setCurrentPage(1)
   }
 
-  const handleProductPreparedChange = (orderId: string, productId: number, prepared: boolean) => {
+  const handleProductPreparedChange = (orderId: number, productId: number, prepared: boolean) => {
     setFilteredExportOrders(prevOrders => 
       prevOrders.map(order => 
-        order._id === orderId
+        order.id === orderId
           ? {
               ...order,
               products: order.products.map(product =>
@@ -233,10 +242,10 @@ export default function QuanLyXuatKho() {
     })
   }
 
-  const handleConfirmExport = (orderId: string) => {
+  const handleConfirmExport = (orderId: number) => {
     setFilteredExportOrders(prevOrders => 
       prevOrders.map(order => 
-        order._id === orderId ? { ...order, status: 'exported' } : order
+        order.id === orderId ? { ...order, status: 'exported' } : order
       )
     )
     toast({
@@ -258,13 +267,6 @@ export default function QuanLyXuatKho() {
   const currentExportOrders = filteredExportOrders.slice(indexOfFirstOrder, indexOfLastOrder)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleViewDetails = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setIsDialogOpen(true);
-  };
 
   if (isLoading) {
     return (
@@ -346,38 +348,42 @@ export default function QuanLyXuatKho() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {currentExportOrders.map(order => (
-  <TableRow key={order._id}>
-    <TableCell>#{order._id}</TableCell>
-    <TableCell>{order.customer_id.name}</TableCell>
-    <TableCell>{order.date_ordered}</TableCell>
-    <TableCell>{order.warehouse || 'Đang cập nhật'}</TableCell>
-    <TableCell>
-      <ExportStatusBadge status={order.status} />
-    </TableCell>
-    <TableCell>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <ChevronDown className="h-4 w-4" />
-            <span className="sr-only">Mở menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => handleConfirmExport(order._id)}>
-            <Truck className="mr-2 h-4 w-4" />
-            Xác nhận xuất kho
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => handleViewDetails(order._id)}>
-            Chi tiết
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </TableCell>
-  </TableRow>
-))}
+              {currentExportOrders.map(order => (
+                <TableRow key={order._id}>
+                  <TableCell>#{order._id}</TableCell>
+                  <TableCell>{order.customer_id.name}</TableCell>
+                  <TableCell>{order.date_ordered}</TableCell>
+                  <TableCell>{order.warehouse || 'Đang cập nhật'}</TableCell>
+                  <TableCell>
+                    <ExportStatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <ChevronDown className="h-4 w-4" />
+                          <span className="sr-only">Mở menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleConfirmExport(order._id)}>
+                          <Truck className="mr-2 h-4 w-4" />
+                          Xác nhận xuất kho
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <ExportOrderDetailsDialog 
+                            exportOrder={order} 
+                            onProductPreparedChange={handleProductPreparedChange}
+                            onConfirmExport={handleConfirmExport}
+                          />
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>
@@ -399,29 +405,16 @@ export default function QuanLyXuatKho() {
           Sau
         </Button>
       </div>
-      
-      {selectedOrderId && orderDetails && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <ExportOrderDetailsDialog
-              exportOrder={{
-                ...currentExportOrders.find(order => order._id === selectedOrderId)!,
-                products: orderDetails.data.map((detail: any) => ({
-                  id: detail.product_id._id,
-                  name: detail.product_id.name,
-                  quantity: detail.quantity,
-                  prepared: false // You might want to add this field to your backend response
-                }))
-              }}
-              onProductPreparedChange={handleProductPreparedChange}
-              onConfirmExport={handleConfirmExport}
-            />
-          </DialogContent>
-        </Dialog>
+      {selectedOrder && orderDetails && (
+        <ExportOrderDetailsDialog
+          exportOrder={orderDetails.data}
+          onProductPreparedChange={handleProductPreparedChange}
+          onConfirmExport={handleConfirmExport}
+        />
       )}
 
-      {isOrderDetailsLoading && <p>Đang tải thông tin chi tiết đơn hàng...</p>}
-      {isOrderDetailsError && <p>Có lỗi khi tải thông tin chi tiết đơn hàng.</p>}
+      {isOrderDetailsLoading && <p>Loading order details...</p>}
+      {isOrderDetailsError && <p>Error loading order details.</p>}
     </div>
   )
 }

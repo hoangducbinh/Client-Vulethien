@@ -43,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="text-xl font-semibold">Admin</span>
         </div>
         <nav className="p-4 space-y-2">
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/dashboard" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <BarChart2 className="mr-2 h-4 w-4" />
             Dashboard
           </Link>
@@ -76,11 +76,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Building className="mr-2 h-4 w-4" />
             Kho hàng
           </Link>
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/admin" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <FileText className="mr-2 h-4 w-4" />
              Hóa đơn
           </Link>
-          <Link href="/#" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
+          <Link href="/admin" className="w-full justify-start rounded-lg hover:bg-gray-200 transition-colors flex items-center p-2">
             <ClipboardList className="mr-2 h-4 w-4" />
              Báo cáo
           </Link>

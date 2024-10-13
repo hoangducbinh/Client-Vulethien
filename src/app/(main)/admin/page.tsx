@@ -4,6 +4,7 @@ import Layout from '@/app/(main)/layout';
 import useAuthStore from '@/store/store';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import Dashboard from '../dashboard/page';
 
 const HomePage = () => {
     const { isAuthenticated} = useAuthStore();
@@ -18,9 +19,7 @@ const HomePage = () => {
    
     return (
         <>
-                <div className="flex justify-center items-center h-screen">
-                    <h1 className="text-3xl">Welcome to the home page</h1>
-                </div>
+           <Dashboard />
            
         </>
        

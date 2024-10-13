@@ -759,62 +759,65 @@ export default function InventoryPage() {
           </div>
           {/*Thanh toán*/}
           <div className="grid grid-cols-2 gap-4 mt-4">
-      <div>
-        <Label htmlFor="payment_amount">Số tiền thanh toán</Label>
-        <Input
-          id="payment_amount"
-          type="number"
-          value={newStockEntry.payment.amount}
-          onChange={(e) => {
-            const paymentAmount = parseFloat(e.target.value);
-            const totalValue = calculateTotalAmount();
-            
-            if (paymentAmount > totalValue) {
-              toast.error(`Số tiền thanh toán không được vượt quá ${totalValue.toLocaleString()} VND`);
-              return;
-            }
-
-            setNewStockEntry({
-              ...newStockEntry,
-              payment: {
-                ...newStockEntry.payment,
-                amount: paymentAmount,
-                status: paymentAmount === totalValue ? 'Đã thanh toán đủ' : 
-                        paymentAmount > 0 ? 'Còn nợ' : 'Chưa thanh toán'
-              }
-            });
-          }}
-        />
-      </div>
-      <div>
-        <Label htmlFor="payment_method">Phương thức thanh toán</Label>
-        <Select
-          value={newStockEntry.payment.method}
-          onValueChange={(value) => setNewStockEntry({
-            ...newStockEntry,
-            payment: {
-              ...newStockEntry.payment,
-              method: value
-            }
-          })}
-        >
-          <SelectTrigger id="payment_method">
-            <SelectValue placeholder="Chọn phương thức" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-            <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-            <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="col-span-2">
-        <Label htmlFor="payment_status">Trạng thái thanh toán</Label>
-        <div className="mt-1 font-semibold">
-          {newStockEntry.payment.status || 'Chưa thanh toán'}
-        </div>
-      </div>
-    </div>
+            <div>
+              <Label htmlFor="payment_amount">Số tiền thanh toán</Label>
+              <Input
+                id="payment_amount"
+                type="number"
+                value={newStockEntry.payment.amount}
+                onChange={(e) => setNewStockEntry({
+                  ...newStockEntry,
+                  payment: {
+                    ...newStockEntry.payment,
+                    amount: parseFloat(e.target.value)
+                  }
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment_method">Phương thức thanh toán</Label>
+              <Select
+                value={newStockEntry.payment.method}
+                onValueChange={(value) => setNewStockEntry({
+                  ...newStockEntry,
+                  payment: {
+                    ...newStockEntry.payment,
+                    method: value
+                  }
+                })}
+              >
+                <SelectTrigger id="payment_method">
+                  <SelectValue placeholder="Chọn phương thức" />
+                </SelectTrigger>
+                <SelectContent>                  <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                  <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                  <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="payment_status">Trạng thái thanh toán</Label>
+              <Select
+                value={newStockEntry.payment.status}
+                onValueChange={(value) => setNewStockEntry({
+                  ...newStockEntry,
+                  payment: {
+                    ...newStockEntry.payment,
+                    status: value
+                  }
+                })}
+              >
+                <SelectTrigger id="payment_status">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Đã thanh toán đủ">Đã thanh toán đủ</SelectItem>
+                  <SelectItem value="Còn nợ">Còn nợ</SelectItem>
+                  <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {/*Chi tiết sản phẩm*/}
           <div className="mt-4">
             <Label>Chi tiết sản phẩm</Label>
