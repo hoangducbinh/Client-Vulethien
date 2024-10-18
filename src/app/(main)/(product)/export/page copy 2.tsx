@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, Download, ChevronDown, Loader2, X, Check, Truck, Eye, ClipboardList, User, Package, Calendar, Warehouse, UserCheck } from 'lucide-react'
+import { Search, Filter, Download, ChevronDown, Loader2, X, Check, Truck, Eye, ClipboardList, Package, User, Calendar, Warehouse, UserCheck } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -27,10 +27,10 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 import useAPI, { mutateAPI } from "@/services/handleAPI"
 import { mutate } from 'swr'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 type Product = {
   id: number
@@ -159,13 +159,6 @@ function ExportOrderDetailsDialog({ exportOrder, onProductPreparedChange, onConf
   )
 }
 
-
-
-
-
-
-
-
 function ExportStatusBadge({ status, orderId, onStatusChange }: { 
   status: ExportOrder['status']; 
   orderId: string;
@@ -246,18 +239,15 @@ export default function QuanLyXuatKho() {
 
   const handleStatusChange = async (orderId: string, newStatus: ExportOrder['status']) => {
     try {
-      // Gọi API để cập nhật trạng thái
       const response = await mutateAPI('/order/updateOrderStatus', { orderId, status: newStatus }, 'put');
   
       if (response.message === "Cập nhật trạng thái đơn hàng thành công") {
-        // Cập nhật state local
         setFilteredExportOrders(prevOrders =>
           prevOrders.map(order =>
             order._id === orderId ? { ...order, status: newStatus } : order
           )
         );
   
-        // Cập nhật localOrderDetails nếu đang mở dialog
         if (selectedOrderId === orderId) {
           setLocalOrderDetails((prevDetails: any) => ({
             ...prevDetails,
@@ -265,7 +255,6 @@ export default function QuanLyXuatKho() {
           }));
         }
   
-        // Revalidate các endpoint liên quan
         mutate('/order/getAll');
         mutate(`/order/getOrderDetails/${orderId}`);
   
@@ -286,10 +275,7 @@ export default function QuanLyXuatKho() {
     }
   };
 
-
-
   const handleProductPreparedChange = async (orderId: string, productId: number, prepared: boolean) => {
-    // Cập nhật state local ngay lập tức
     setLocalOrderDetails((prevDetails: any) => ({
       ...prevDetails,
       products: prevDetails.products.map((product: any) =>
@@ -298,10 +284,8 @@ export default function QuanLyXuatKho() {
       status: prevDetails.products.every((p: any) => p.id === productId ? prepared : p.prepared) ? 'ready' : 'preparing'
     }));
     try {
-      // Gọi API để cập nhật trạng thái chuẩn bị sản phẩm
       await mutateAPI(`/order/updateProductPreparedStatus`, { orderId, productId, prepared }, 'put');
 
-      // Update the local state
       setFilteredExportOrders(prevOrders => 
         prevOrders.map(order => 
           order._id === orderId
@@ -333,18 +317,6 @@ export default function QuanLyXuatKho() {
     }
   };
 
-  // const handleConfirmExport = (orderId: string) => {
-  //   setFilteredExportOrders(prevOrders => 
-  //     prevOrders.map(order => 
-  //       order._id === orderId ? { ...order, status: 'exported' } : order
-  //     )
-  //   )
-  //   toast({
-  //     title: "Xuất kho thành công",
-  //     description: `Phiếu xuất kho #${orderId} đã được xác nhận xuất kho.`,
-  //   })
-  // }
-
   const handleConfirmExport = async (orderId: string) => {
     try {
       await mutateAPI('/order/updateOrderStatus', { orderId, status: 'exported' }, 'put');
@@ -357,11 +329,11 @@ export default function QuanLyXuatKho() {
         title: "Xuất kho thành công",
         description: `Phiếu xuất kho #${orderId} đã được xác nhận xuất kho.`,
       });
-      // Revalidate các endpoint liên quan
       mutate('/order/getAll');
       mutate(`/order/getOrderDetails/${orderId}`);
     } catch (error) {
       console.error("Failed to confirm export", error);
+      
       toast({
         title: "Lỗi",
         description: "Không thể xác nhận xuất kho.",
@@ -370,9 +342,7 @@ export default function QuanLyXuatKho() {
     }
   }
 
-
   const handleExport = () => {
-    // Implement export logic here
     toast({
       title: "Xuất dữ liệu",
       description: "Dữ liệu xuất kho đã được xuất thành công.",
@@ -390,11 +360,9 @@ export default function QuanLyXuatKho() {
   const handleViewDetails = async (orderId: string) => {
     setSelectedOrderId(orderId);
     try {
-      // Sử dụng mutateAPI để lấy chi tiết đơn hàng
       const response = await mutateAPI(`/order/getOrderDetails/${orderId}`, null, 'get');
-      console.log(response); // Log để kiểm tra cấu trúc dữ liệu
+      console.log(response);
   
-      // Tìm đơn hàng trong currentExportOrders
       const selectedOrder = currentExportOrders.find(order => order._id === orderId);
       
       if (selectedOrder && response.data) {
@@ -509,11 +477,11 @@ export default function QuanLyXuatKho() {
                   <TableCell>{new Date(order.date_ordered).toLocaleDateString('vi-VN')}</TableCell>
                   <TableCell>{order.warehouse || 'Đang cập nhật'}</TableCell>
                   <TableCell>
-                  <ExportStatusBadge 
-                    status={order.status} 
-                    orderId={order._id}
-                    onStatusChange={handleStatusChange}
-                  />
+                    <ExportStatusBadge 
+                      status={order.status} 
+                      orderId={order._id}
+                      onStatusChange={handleStatusChange}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
@@ -526,7 +494,7 @@ export default function QuanLyXuatKho() {
                         onClick={() => handleConfirmExport(order._id)}
                         disabled={order.status !== 'ready'}
                       >
-                        <Truck className="h-4 w-4  mr-1" /> Xuất kho
+                        <Truck className="h-4 w-4 mr-1" /> Xuất kho
                       </Button>
                     </div>
                   </TableCell>

@@ -40,14 +40,16 @@ import "react-toastify/dist/ReactToastify.css"
 import { Card } from "@/components/ui/card";
 import Image from "next/image"
 
-const orderStatuses = ["Chờ xác nhận", "Đã xác nhận", "Đang giao hàng", "Đã giao hàng", "Đã hủy"]
+const orderStatuses = ["pending", "preparing", "ready", "exported", "confirmed", "cancelled", "delivered"]
 
 const statusColors = {
-  "Chờ xác nhận": "bg-gray-500",
-  "Đã xác nhận": "bg-green-500",
-  "Đang giao hàng": "bg-purple-500",
-  "Đã giao hàng": "bg-green-500",
-  "Đã hủy": "bg-red-500",
+  "pending": "bg-yellow-500",
+  "preparing": "bg-blue-500",
+  "ready": "bg-green-500",
+  "exported": "bg-gray-500",
+  "confirmed": "bg-green-500",
+  "cancelled": "bg-red-500",
+  "delivered": "bg-green-500",
 }
 
 export default function EnhancedOrderManagement() {
@@ -80,15 +82,18 @@ export default function EnhancedOrderManagement() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const response = await mutateAPI(`/order/update/${orderId}`, { status: newStatus }, 'put');
-      if (response.data) {
-        setSelectedOrder(response.data);
+      const response = await mutateAPI(`/order/updateOrderStatus`, { orderId, status: newStatus }, 'put');
+      
+      if (response && response.data) {
+        setSelectedOrder((prev: any) => prev && { ...prev, status: newStatus });
         mutate(); // Refresh the order list
-        toast.success('Cập nhật trạng thái thành công');
+        toast.success('Cập nhật trạng thái đơn hàng thành công');
+      } else {
+        throw new Error(response.message || "Không thể cập nhật trạng thái đơn hàng");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating order status:', error);
-      toast.error('Không thể cập nhật trạng thái đơn hàng');
+      toast.error(error.message || 'Không thể cập nhật trạng thái đơn hàng');
     }
   };
 
@@ -141,10 +146,17 @@ export default function EnhancedOrderManagement() {
                 <SelectValue placeholder="Lọc theo trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                {/* <SelectItem value="all">Tất cả trạng thái</SelectItem>
                 {orderStatuses.map(status => (
                   <SelectItem key={status} value={status}>{status}</SelectItem>
-                ))}
+                ))} */}
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                <SelectItem value="pending">Chờ xử lý</SelectItem>
+                <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                <SelectItem value="preparing">Đang chuẩn bị</SelectItem>
+                <SelectItem value="ready">Sẵn sàng xuất</SelectItem>
+                <SelectItem value="exported">Đã xuất kho</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -197,28 +209,32 @@ export default function EnhancedOrderManagement() {
                       {order.total_value.toLocaleString()} VNĐ
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${statusColors[order.status as keyof typeof statusColors]} text-white`}>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       <div className="flex space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleViewDetails(order._id)}>
                           Chi tiết
                         </Button>
-                        <Select
-                          value={order.status}
-                          onValueChange={(value) => handleStatusChange(order._id, value)}
-                        >
-                          <SelectTrigger className="w-[140px] border rounded-lg shadow-sm">
-                            <SelectValue placeholder="Mới" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {orderStatuses.map(status => (
-                              <SelectItem key={status} value={status}>{status}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {['pending', 'confirmed', 'cancelled'].includes(order.status) ? (
+                          <Select
+                            value={order.status}
+                            onValueChange={(value) => handleStatusChange(order._id, value)}
+                          >
+                            <SelectTrigger className="w-[140px] border rounded-lg shadow-sm">
+                              <SelectValue placeholder="Trạng thái" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Chờ xử lý</SelectItem>
+                              <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                              <SelectItem value="cancelled">Đã hủy</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge className={`${statusColors[order.status as keyof typeof statusColors]} text-white`}>
+                            {order.status === 'preparing' && 'Đang chuẩn bị'}
+                            {order.status === 'ready' && 'Sẵn sàng xuất'}
+                            {order.status === 'exported' && 'Đã xuất kho'}
+                            {order.status === 'delivered' && 'Đã giao hàng'}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -282,7 +298,10 @@ export default function EnhancedOrderManagement() {
                 <div>
                   <p className="text-sm text-gray-500">Trạng thái</p>
                   <Badge className={`${statusColors[selectedOrder.status as keyof typeof statusColors]} text-white px-3 py-1 text-sm`}>
-                    {selectedOrder.status}
+                    {selectedOrder.status === 'pending' && 'Chờ xử lý'}
+                    {selectedOrder.status === 'preparing' && 'Đang chuẩn bị'}
+                    {selectedOrder.status === 'ready' && 'Sẵn sàng xuất'}
+                    {selectedOrder.status === 'exported' && 'Đã xuất kho'}
                   </Badge>
                 </div>
                 <div>

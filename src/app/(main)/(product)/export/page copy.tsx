@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, Download, ChevronDown, Loader2, X, Check, Truck, Eye, ClipboardList, User, Package, Calendar, Warehouse, UserCheck } from 'lucide-react'
+import { Search, Filter, Download, ChevronDown, Loader2, X, Check, Truck, Eye } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -29,8 +29,6 @@ import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import useAPI, { mutateAPI } from "@/services/handleAPI"
 import { mutate } from 'swr'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 type Product = {
   id: number
@@ -62,47 +60,28 @@ function ExportOrderDetailsDialog({ exportOrder, onProductPreparedChange, onConf
   return (
     <>
       <DialogHeader className="pb-4 border-b">
-        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-          <ClipboardList className="h-6 w-6 text-primary" />
-          Chi tiết phiếu xuất kho #{exportOrder._id}
-        </DialogTitle>
-        <DialogDescription className="text-lg mt-2 flex items-center gap-2">
-          <User className="h-5 w-5 text-gray-500" />
-          Khách hàng: <span className="font-semibold">{exportOrder.customer_id.name}</span>
+        <DialogTitle className="text-2xl font-bold">Chi tiết phiếu xuất kho #{exportOrder._id}</DialogTitle>
+        <DialogDescription className="text-lg mt-2">
+          Xuất kho cho khách hàng: <span className="font-semibold">{exportOrder.customer_id.name}</span>
         </DialogDescription>
       </DialogHeader>
       <div className="py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Thông tin chung
-            </h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Ngày xuất:
-                </span>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Thông tin chung</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Ngày xuất:</span>
                 <span className="font-medium">{new Date(exportOrder.date_ordered).toLocaleDateString('vi-VN')}</span>
               </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <Warehouse className="h-4 w-4" />
-                  Kho xuất:
-                </span>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Kho xuất:</span>
                 <span className="font-medium">{exportOrder.warehouse}</span>
               </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <UserCheck className="h-4 w-4" />
-                  Người phụ trách:
-                </span>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Người phụ trách:</span>
                 <span className="font-medium">{exportOrder.responsiblePerson}</span>
               </div>
-              <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Trạng thái:</span>
                 <ExportStatusBadge 
@@ -114,35 +93,30 @@ function ExportOrderDetailsDialog({ exportOrder, onProductPreparedChange, onConf
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Danh sách sản phẩm
-            </h3>
-            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-              <div className="space-y-4">
-                {(exportOrder.products || []).map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border">
-                    <div>
-                      <span className="font-medium">{product.name}</span>
-                      <Badge variant="secondary" className="ml-2">x{product.quantity}</Badge>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`product-${product.id}`}
-                        checked={product.prepared}
-                        onCheckedChange={(checked) => onProductPreparedChange(exportOrder._id, product.id, checked as boolean)}
-                      />
-                      <label
-                        htmlFor={`product-${product.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Đã chuẩn bị
-                      </label>  
-                    </div>
+            <h3 className="text-lg font-semibold mb-3">Danh sách sản phẩm</h3>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+              {(exportOrder.products || []).map((product) => (
+                <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm">
+                  <div>
+                    <span className="font-medium">{product.name}</span>
+                    <span className="text-sm text-gray-500 ml-2">x{product.quantity}</span>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`product-${product.id}`}
+                      checked={product.prepared}
+                      onCheckedChange={(checked) => onProductPreparedChange(exportOrder._id, product.id, checked as boolean)}
+                    />
+                    <label
+                      htmlFor={`product-${product.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Đã chuẩn bị
+                    </label>  
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
